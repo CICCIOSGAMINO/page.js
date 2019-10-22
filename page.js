@@ -4,521 +4,505 @@ import pathtoRegexp from './path-to-regex.js';
  * Short-cuts for global-object checks
  */
 
-var hasDocument = ('undefined' !== typeof document);
-var hasWindow = ('undefined' !== typeof window);
-var hasHistory = ('undefined' !== typeof history);
-var hasProcess = typeof process !== 'undefined';
+const hasDocument = ('undefined' !== typeof document);
+const hasWindow = ('undefined' !== typeof window);
+const hasHistory = ('undefined' !== typeof history);
+const hasProcess = typeof process !== 'undefined';
 
 /**
  * Detect click event
  */
-var clickEvent = hasDocument && document.ontouchstart ? 'touchstart' : 'click';
+const clickEvent = hasDocument && document.ontouchstart ? 'touchstart' : 'click';
 
 /**
  * To work properly with the URL
  * history.location generated polyfill in https://github.com/devote/HTML5-History-API
  */
 
-var isLocation = hasWindow && !!(window.history.location || window.location);
+const isLocation = hasWindow && !!(window.history.location || window.location);
 
 /**
  * The page instance
  * @api private
  */
-function Page() {
+class Page {
   // public things
-  this.callbacks = [];
-  this.exits = [];
-  this.current = '';
-  this.len = 0;
+  callbacks = [];
+  exits = [];
+  current = '';
+  len = 0;
 
   // private things
-  this._decodeURLComponents = true;
-  this._base = '';
-  this._strict = false;
-  this._running = false;
-  this._hashbang = false;
+  _decodeURLComponents = true;
+  _base = '';
+  _strict = false;
+  _running = false;
+  _hashbang = false;
 
   // bound functions
-  this.clickHandler = this.clickHandler.bind(this);
-  this._onpopstate = this._onpopstate.bind(this);
-}
+  clickHandler = this.clickHandler.bind(this);
+  // _onpopstate = this._onpopstate.bind(this);
 
-/**
- * Configure the instance of page. This can be called multiple times.
- *
- * @param {Object} options
- * @api public
- */
+  /**
+   * Configure the instance of page. This can be called multiple times.
+   *
+   * @param {Object} options
+   * @api public
+   */
+  configure(options) {
+    var opts = options || {};
 
-Page.prototype.configure = function(options) {
-  var opts = options || {};
+    this._window = opts.window || (hasWindow && window);
+    this._decodeURLComponents = opts.decodeURLComponents !== false;
+    this._popstate = opts.popstate !== false && hasWindow;
+    this._click = opts.click !== false && hasDocument;
+    this._hashbang = !!opts.hashbang;
 
-  this._window = opts.window || (hasWindow && window);
-  this._decodeURLComponents = opts.decodeURLComponents !== false;
-  this._popstate = opts.popstate !== false && hasWindow;
-  this._click = opts.click !== false && hasDocument;
-  this._hashbang = !!opts.hashbang;
+    var _window = this._window;
+    if(this._popstate) {
+      _window.addEventListener('popstate', this._onpopstate, false);
+    } else if(hasWindow) {
+      _window.removeEventListener('popstate', this._onpopstate, false);
+    }
 
-  var _window = this._window;
-  if(this._popstate) {
-    _window.addEventListener('popstate', this._onpopstate, false);
-  } else if(hasWindow) {
-    _window.removeEventListener('popstate', this._onpopstate, false);
-  }
+    if (this._click) {
+      _window.document.addEventListener(clickEvent, this.clickHandler, false);
+    } else if(hasDocument) {
+      _window.document.removeEventListener(clickEvent, this.clickHandler, false);
+    }
 
-  if (this._click) {
-    _window.document.addEventListener(clickEvent, this.clickHandler, false);
-  } else if(hasDocument) {
-    _window.document.removeEventListener(clickEvent, this.clickHandler, false);
-  }
-
-  if(this._hashbang && hasWindow && !hasHistory) {
-    _window.addEventListener('hashchange', this._onpopstate, false);
-  } else if(hasWindow) {
-    _window.removeEventListener('hashchange', this._onpopstate, false);
-  }
-};
-
-/**
- * Get or set basepath to `path`.
- *
- * @param {string} path
- * @api public
- */
-
-Page.prototype.base = function(path) {
-  if (0 === arguments.length) return this._base;
-  this._base = path;
-};
-
-/**
- * Gets the `base`, which depends on whether we are using History or
- * hashbang routing.
-
-  * @api private
-  */
-Page.prototype._getBase = function() {
-  var base = this._base;
-  if(!!base) return base;
-  var loc = hasWindow && this._window && this._window.location;
-
-  if(hasWindow && this._hashbang && loc && loc.protocol === 'file:') {
-    base = loc.pathname;
-  }
-
-  return base;
-};
-
-/**
- * Get or set strict path matching to `enable`
- *
- * @param {boolean} enable
- * @api public
- */
-
-Page.prototype.strict = function(enable) {
-  if (0 === arguments.length) return this._strict;
-  this._strict = enable;
-};
-
-
-/**
- * Bind with the given `options`.
- *
- * Options:
- *
- *    - `click` bind to click events [true]
- *    - `popstate` bind to popstate [true]
- *    - `dispatch` perform initial dispatch [true]
- *
- * @param {Object} options
- * @api public
- */
-
-Page.prototype.start = function(options) {
-  var opts = options || {};
-  this.configure(opts);
-
-  if (false === opts.dispatch) return;
-  this._running = true;
-
-  var url;
-  if(isLocation) {
-    var window = this._window;
-    var loc = window.location;
-
-    if(this._hashbang && ~loc.hash.indexOf('#!')) {
-      url = loc.hash.substr(2) + loc.search;
-    } else if (this._hashbang) {
-      url = loc.search + loc.hash;
-    } else {
-      url = loc.pathname + loc.search + loc.hash;
+    if(this._hashbang && hasWindow && !hasHistory) {
+      _window.addEventListener('hashchange', this._onpopstate, false);
+    } else if(hasWindow) {
+      _window.removeEventListener('hashchange', this._onpopstate, false);
     }
   }
 
-  this.replace(url, null, true, opts.dispatch);
-};
+  /**
+   * Get or set basepath to `path`.
+   *
+   * @param {string} path
+   * @api public
+   */
+  base(path) {
+    if (0 === arguments.length) return this._base;
+    this._base = path;
+  }
 
-/**
- * Unbind click and popstate event handlers.
- *
- * @api public
- */
+  /**
+   * Gets the `base`, which depends on whether we are using History or
+   * hashbang routing.
 
-Page.prototype.stop = function() {
-  if (!this._running) return;
-  this.current = '';
-  this.len = 0;
-  this._running = false;
+    * @api private
+    */
+  _getBase() {
+    var base = this._base;
+    if(!!base) return base;
+    var loc = hasWindow && this._window && this._window.location;
 
-  var window = this._window;
-  this._click && window.document.removeEventListener(clickEvent, this.clickHandler, false);
-  hasWindow && window.removeEventListener('popstate', this._onpopstate, false);
-  hasWindow && window.removeEventListener('hashchange', this._onpopstate, false);
-};
+    if(hasWindow && this._hashbang && loc && loc.protocol === 'file:') {
+      base = loc.pathname;
+    }
 
-/**
- * Show `path` with optional `state` object.
- *
- * @param {string} path
- * @param {Object=} state
- * @param {boolean=} dispatch
- * @param {boolean=} push
- * @return {!Context}
- * @api public
- */
+    return base;
+  }
 
-Page.prototype.show = function(path, state, dispatch, push) {
-  var ctx = new Context(path, state, this),
-    prev = this.prevContext;
-  this.prevContext = ctx;
-  this.current = ctx.path;
-  if (false !== dispatch) this.dispatch(ctx, prev);
-  if (false !== ctx.handled && false !== push) ctx.pushState();
-  return ctx;
-};
+  /**
+   * Get or set strict path matching to `enable`
+   *
+   * @param {boolean} enable
+   * @api public
+   */
+  strict(enable) {
+    if (0 === arguments.length) return this._strict;
+    this._strict = enable;
+  }
 
-/**
- * Goes back in the history
- * Back should always let the current route push state and then go back.
- *
- * @param {string} path - fallback path to go back if no more history exists, if undefined defaults to page.base
- * @param {Object=} state
- * @api public
- */
+  /**
+   * Bind with the given `options`.
+   *
+   * Options:
+   *
+   *    - `click` bind to click events [true]
+   *    - `popstate` bind to popstate [true]
+   *    - `dispatch` perform initial dispatch [true]
+   *
+   * @param {Object} options
+   * @api public
+   */
+  start(options) {
+    var opts = options || {};
+    this.configure(opts);
 
-Page.prototype.back = function(path, state) {
-  var page = this;
-  if (this.len > 0) {
+    if (false === opts.dispatch) return;
+    this._running = true;
+
+    var url;
+    if(isLocation) {
+      var window = this._window;
+      var loc = window.location;
+
+      if(this._hashbang && ~loc.hash.indexOf('#!')) {
+        url = loc.hash.substr(2) + loc.search;
+      } else if (this._hashbang) {
+        url = loc.search + loc.hash;
+      } else {
+        url = loc.pathname + loc.search + loc.hash;
+      }
+    }
+
+    this.replace(url, null, true, opts.dispatch);
+  }
+
+  /**
+   * Unbind click and popstate event handlers.
+   *
+   * @api public
+   */
+  stop() {
+    if (!this._running) return;
+    this.current = '';
+    this.len = 0;
+    this._running = false;
+
     var window = this._window;
-    // this may need more testing to see if all browsers
-    // wait for the next tick to go back in history
-    hasHistory && window.history.back();
-    this.len--;
-  } else if (path) {
-    setTimeout(function() {
-      page.show(path, state);
-    });
-  } else {
-    setTimeout(function() {
-      page.show(page._getBase(), state);
-    });
+    this._click && window.document.removeEventListener(clickEvent, this.clickHandler, false);
+    hasWindow && window.removeEventListener('popstate', this._onpopstate, false);
+    hasWindow && window.removeEventListener('hashchange', this._onpopstate, false);
   }
-};
 
-/**
- * Register route to redirect from one path to other
- * or just redirect to another route
- *
- * @param {string} from - if param 'to' is undefined redirects to 'from'
- * @param {string=} to
- * @api public
- */
-Page.prototype.redirect = function(from, to) {
-  var inst = this;
+  /**
+   * Show `path` with optional `state` object.
+   *
+   * @param {string} path
+   * @param {Object=} state
+   * @param {boolean=} dispatch
+   * @param {boolean=} push
+   * @return {!Context}
+   * @api public
+   */
+  show(path, state, dispatch, push) {
+    var ctx = new Context(path, state, this),
+      prev = this.prevContext;
+    this.prevContext = ctx;
+    this.current = ctx.path;
+    if (false !== dispatch) this.dispatch(ctx, prev);
+    if (false !== ctx.handled && false !== push) ctx.pushState();
+    return ctx;
+  }
 
-  // Define route from a path to another
-  if ('string' === typeof from && 'string' === typeof to) {
-    page.call(this, from, function(e) {
+  /**
+   * Goes back in the history
+   * Back should always let the current route push state and then go back.
+   *
+   * @param {string} path - fallback path to go back if no more history exists, if undefined defaults to page.base
+   * @param {Object=} state
+   * @api public
+   */
+  back(path, state) {
+    var page = this;
+    if (this.len > 0) {
+      var window = this._window;
+      // this may need more testing to see if all browsers
+      // wait for the next tick to go back in history
+      hasHistory && window.history.back();
+      this.len--;
+    } else if (path) {
       setTimeout(function() {
-        inst.replace(/** @type {!string} */ (to));
+        page.show(path, state);
+      });
+    } else {
+      setTimeout(function() {
+        page.show(page._getBase(), state);
+      });
+    }
+  }
+
+  /**
+   * Register route to redirect from one path to other
+   * or just redirect to another route
+   *
+   * @param {string} from - if param 'to' is undefined redirects to 'from'
+   * @param {string=} to
+   * @api public
+   */
+  redirect(from, to) {
+    var inst = this;
+
+    // Define route from a path to another
+    if ('string' === typeof from && 'string' === typeof to) {
+      page.call(this, from, function(e) {
+        setTimeout(function() {
+          inst.replace(/** @type {!string} */ (to));
+        }, 0);
+      });
+    }
+
+    // Wait for the push state and replace it with another
+    if ('string' === typeof from && 'undefined' === typeof to) {
+      setTimeout(function() {
+        inst.replace(from);
       }, 0);
-    });
+    }
   }
 
-  // Wait for the push state and replace it with another
-  if ('string' === typeof from && 'undefined' === typeof to) {
-    setTimeout(function() {
-      inst.replace(from);
-    }, 0);
-  }
-};
-
-/**
- * Replace `path` with optional `state` object.
- *
- * @param {string} path
- * @param {Object=} state
- * @param {boolean=} init
- * @param {boolean=} dispatch
- * @return {!Context}
- * @api public
- */
-
-
-Page.prototype.replace = function(path, state, init, dispatch) {
-  var ctx = new Context(path, state, this),
-    prev = this.prevContext;
-  this.prevContext = ctx;
-  this.current = ctx.path;
-  ctx.init = init;
-  ctx.save(); // save before dispatching, which may redirect
-  if (false !== dispatch) this.dispatch(ctx, prev);
-  return ctx;
-};
-
-/**
- * Dispatch the given `ctx`.
- *
- * @param {Context} ctx
- * @api private
- */
-
-Page.prototype.dispatch = function(ctx, prev) {
-  var i = 0, j = 0, page = this;
-
-  function nextExit() {
-    var fn = page.exits[j++];
-    if (!fn) return nextEnter();
-    fn(prev, nextExit);
+  /**
+   * Replace `path` with optional `state` object.
+   *
+   * @param {string} path
+   * @param {Object=} state
+   * @param {boolean=} init
+   * @param {boolean=} dispatch
+   * @return {!Context}
+   * @api public
+   */
+  replace(path, state, init, dispatch) {
+    var ctx = new Context(path, state, this),
+      prev = this.prevContext;
+    this.prevContext = ctx;
+    this.current = ctx.path;
+    ctx.init = init;
+    ctx.save(); // save before dispatching, which may redirect
+    if (false !== dispatch) this.dispatch(ctx, prev);
+    return ctx;
   }
 
-  function nextEnter() {
-    var fn = page.callbacks[i++];
+  /**
+   * Dispatch the given `ctx`.
+   *
+   * @param {Context} ctx
+   * @api private
+   */
+  dispatch(ctx, prev) {
+    var i = 0, j = 0, page = this;
 
-    if (ctx.path !== page.current) {
-      ctx.handled = false;
+    function nextExit() {
+      var fn = page.exits[j++];
+      if (!fn) return nextEnter();
+      fn(prev, nextExit);
+    }
+
+    function nextEnter() {
+      var fn = page.callbacks[i++];
+
+      if (ctx.path !== page.current) {
+        ctx.handled = false;
+        return;
+      }
+      if (!fn) return unhandled.call(page, ctx);
+      fn(ctx, nextEnter);
+    }
+
+    if (prev) {
+      nextExit();
+    } else {
+      nextEnter();
+    }
+  }
+
+  /**
+   * Register an exit route on `path` with
+   * callback `fn()`, which will be called
+   * on the previous context when a new
+   * page is visited.
+   */
+  exit(path, fn) {
+    if (typeof path === 'function') {
+      return this.exit('*', path);
+    }
+
+    var route = new Route(path, null, this);
+    for (var i = 1; i < arguments.length; ++i) {
+      this.exits.push(route.middleware(arguments[i]));
+    }
+  }
+
+  /**
+   * Handle "click" events.
+   */
+  clickHandler(e) {
+    if (1 !== this._which(e)) return;
+
+    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+    if (e.defaultPrevented) return;
+
+    // ensure link
+    // use shadow dom when available if not, fall back to composedPath()
+    // for browsers that only have shady
+    var el = e.target;
+    var eventPath = e.path || (e.composedPath ? e.composedPath() : null);
+
+    if(eventPath) {
+      for (var i = 0; i < eventPath.length; i++) {
+        if (!eventPath[i].nodeName) continue;
+        if (eventPath[i].nodeName.toUpperCase() !== 'A') continue;
+        if (!eventPath[i].href) continue;
+
+        el = eventPath[i];
+        break;
+      }
+    }
+
+    // continue ensure link
+    // el.nodeName for svg links are 'a' instead of 'A'
+    while (el && 'A' !== el.nodeName.toUpperCase()) el = el.parentNode;
+    if (!el || 'A' !== el.nodeName.toUpperCase()) return;
+
+    // check if link is inside an svg
+    // in this case, both href and target are always inside an object
+    var svg = (typeof el.href === 'object') && el.href.constructor.name === 'SVGAnimatedString';
+
+    // Ignore if tag has
+    // 1. "download" attribute
+    // 2. rel="external" attribute
+    if (el.hasAttribute('download') || el.getAttribute('rel') === 'external') return;
+
+    // ensure non-hash for the same path
+    var link = el.getAttribute('href');
+    if(!this._hashbang && this._samePath(el) && (el.hash || '#' === link)) return;
+
+    // Check for mailto: in the href
+    if (link && link.indexOf('mailto:') > -1) return;
+
+    // check target
+    // svg target is an object and its desired value is in .baseVal property
+    if (svg ? el.target.baseVal : el.target) return;
+
+    // x-origin
+    // note: svg links that are not relative don't call click events (and skip page.js)
+    // consequently, all svg links tested inside page.js are relative and in the same origin
+    if (!svg && !this.sameOrigin(el.href)) return;
+
+    // rebuild path
+    // There aren't .pathname and .search properties in svg links, so we use href
+    // Also, svg href is an object and its desired value is in .baseVal property
+    var path = svg ? el.href.baseVal : (el.pathname + el.search + (el.hash || ''));
+
+    path = path[0] !== '/' ? '/' + path : path;
+
+    // strip leading "/[drive letter]:" on NW.js on Windows
+    if (hasProcess && path.match(/^\/[a-zA-Z]:\//)) {
+      path = path.replace(/^\/[a-zA-Z]:\//, '/');
+    }
+
+    // same page
+    var orig = path;
+    var pageBase = this._getBase();
+
+    if (path.indexOf(pageBase) === 0) {
+      path = path.substr(pageBase.length);
+    }
+
+    if (this._hashbang) path = path.replace('#!', '');
+
+    if (pageBase && orig === path && (!isLocation || this._window.location.protocol !== 'file:')) {
       return;
     }
-    if (!fn) return unhandled.call(page, ctx);
-    fn(ctx, nextEnter);
+
+    e.preventDefault();
+    this.show(orig);
   }
 
-  if (prev) {
-    nextExit();
-  } else {
-    nextEnter();
+  /**
+   * Handle "populate" events.
+   * @api private
+   */
+  _onpopstate = (() => {
+    var loaded = false;
+    if ( ! hasWindow ) {
+      return () => {};
+    }
+    if (hasDocument && document.readyState === 'complete') {
+      loaded = true;
+    } else {
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          loaded = true;
+        }, 0);
+      });
+    }
+    return (e) => {
+      if (!loaded) return;
+      // var page = this;
+      if (e.state) {
+        var path = e.state.path;
+        this.replace(path, e.state);
+      } else if (isLocation) {
+        var loc = this._window.location;
+        this.show(loc.pathname + loc.search + loc.hash, undefined, undefined, false);
+      }
+    };
+  })();
+
+  /**
+   * Event button.
+   */
+  _which(e) {
+    e = e || (hasWindow && this._window.event);
+    return null == e.which ? e.button : e.which;
   }
-};
 
-/**
- * Register an exit route on `path` with
- * callback `fn()`, which will be called
- * on the previous context when a new
- * page is visited.
- */
-Page.prototype.exit = function(path, fn) {
-  if (typeof path === 'function') {
-    return this.exit('*', path);
-  }
-
-  var route = new Route(path, null, this);
-  for (var i = 1; i < arguments.length; ++i) {
-    this.exits.push(route.middleware(arguments[i]));
-  }
-};
-
-/**
- * Handle "click" events.
- */
-
-/* jshint +W054 */
-Page.prototype.clickHandler = function(e) {
-  if (1 !== this._which(e)) return;
-
-  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-  if (e.defaultPrevented) return;
-
-  // ensure link
-  // use shadow dom when available if not, fall back to composedPath()
-  // for browsers that only have shady
-  var el = e.target;
-  var eventPath = e.path || (e.composedPath ? e.composedPath() : null);
-
-  if(eventPath) {
-    for (var i = 0; i < eventPath.length; i++) {
-      if (!eventPath[i].nodeName) continue;
-      if (eventPath[i].nodeName.toUpperCase() !== 'A') continue;
-      if (!eventPath[i].href) continue;
-
-      el = eventPath[i];
-      break;
+  /**
+   * Convert to a URL object
+   * @api private
+   */
+  _toURL(href) {
+    var window = this._window;
+    if(typeof URL === 'function' && isLocation) {
+      return new URL(href, window.location.toString());
+    } else if (hasDocument) {
+      var anc = window.document.createElement('a');
+      anc.href = href;
+      return anc;
     }
   }
 
-  // continue ensure link
-  // el.nodeName for svg links are 'a' instead of 'A'
-  while (el && 'A' !== el.nodeName.toUpperCase()) el = el.parentNode;
-  if (!el || 'A' !== el.nodeName.toUpperCase()) return;
+  /**
+   * Check if `href` is the same origin.
+   * @param {string} href
+   * @api public
+   */
+  sameOrigin(href) {
+    if(!href || !isLocation) return false;
 
-  // check if link is inside an svg
-  // in this case, both href and target are always inside an object
-  var svg = (typeof el.href === 'object') && el.href.constructor.name === 'SVGAnimatedString';
+    var url = this._toURL(href);
+    var window = this._window;
 
-  // Ignore if tag has
-  // 1. "download" attribute
-  // 2. rel="external" attribute
-  if (el.hasAttribute('download') || el.getAttribute('rel') === 'external') return;
-
-  // ensure non-hash for the same path
-  var link = el.getAttribute('href');
-  if(!this._hashbang && this._samePath(el) && (el.hash || '#' === link)) return;
-
-  // Check for mailto: in the href
-  if (link && link.indexOf('mailto:') > -1) return;
-
-  // check target
-  // svg target is an object and its desired value is in .baseVal property
-  if (svg ? el.target.baseVal : el.target) return;
-
-  // x-origin
-  // note: svg links that are not relative don't call click events (and skip page.js)
-  // consequently, all svg links tested inside page.js are relative and in the same origin
-  if (!svg && !this.sameOrigin(el.href)) return;
-
-  // rebuild path
-  // There aren't .pathname and .search properties in svg links, so we use href
-  // Also, svg href is an object and its desired value is in .baseVal property
-  var path = svg ? el.href.baseVal : (el.pathname + el.search + (el.hash || ''));
-
-  path = path[0] !== '/' ? '/' + path : path;
-
-  // strip leading "/[drive letter]:" on NW.js on Windows
-  if (hasProcess && path.match(/^\/[a-zA-Z]:\//)) {
-    path = path.replace(/^\/[a-zA-Z]:\//, '/');
+    var loc = window.location;
+    /*
+        when the port is the default http port 80, internet explorer 11
+        returns an empty string for loc.port, so we need to compare loc.port
+        with an empty string if url.port is the default port 80.
+    */
+    return loc.protocol === url.protocol &&
+      loc.hostname === url.hostname &&
+      (loc.port === url.port || loc.port === '' && url.port === 80);
   }
 
-  // same page
-  var orig = path;
-  var pageBase = this._getBase();
-
-  if (path.indexOf(pageBase) === 0) {
-    path = path.substr(pageBase.length);
+  /**
+   * @api private
+   */
+  _samePath(url) {
+    if(!isLocation) return false;
+    var window = this._window;
+    var loc = window.location;
+    return url.pathname === loc.pathname &&
+      url.search === loc.search;
   }
 
-  if (this._hashbang) path = path.replace('#!', '');
-
-  if (pageBase && orig === path && (!isLocation || this._window.location.protocol !== 'file:')) {
-    return;
+  /**
+   * Remove URL encoding from the given `str`.
+   * Accommodates whitespace in both x-www-form-urlencoded
+   * and regular percent-encoded form.
+   *
+   * @param {string} val - URL component to decode
+   * @api private
+   */
+  _decodeURLEncodedURIComponent(val) {
+    if (typeof val !== 'string') { return val; }
+    return this._decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
   }
-
-  e.preventDefault();
-  this.show(orig);
-};
-
-/**
- * Handle "populate" events.
- * @api private
- */
-
-Page.prototype._onpopstate = (function () {
-  var loaded = false;
-  if ( ! hasWindow ) {
-    return function () {};
-  }
-  if (hasDocument && document.readyState === 'complete') {
-    loaded = true;
-  } else {
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        loaded = true;
-      }, 0);
-    });
-  }
-  return function onpopstate(e) {
-    if (!loaded) return;
-    var page = this;
-    if (e.state) {
-      var path = e.state.path;
-      page.replace(path, e.state);
-    } else if (isLocation) {
-      var loc = page._window.location;
-      page.show(loc.pathname + loc.search + loc.hash, undefined, undefined, false);
-    }
-  };
-})();
-
-/**
- * Event button.
- */
-Page.prototype._which = function(e) {
-  e = e || (hasWindow && this._window.event);
-  return null == e.which ? e.button : e.which;
-};
-
-/**
- * Convert to a URL object
- * @api private
- */
-Page.prototype._toURL = function(href) {
-  var window = this._window;
-  if(typeof URL === 'function' && isLocation) {
-    return new URL(href, window.location.toString());
-  } else if (hasDocument) {
-    var anc = window.document.createElement('a');
-    anc.href = href;
-    return anc;
-  }
-};
-
-/**
- * Check if `href` is the same origin.
- * @param {string} href
- * @api public
- */
-
-Page.prototype.sameOrigin = function(href) {
-  if(!href || !isLocation) return false;
-
-  var url = this._toURL(href);
-  var window = this._window;
-
-  var loc = window.location;
-  /*
-      when the port is the default http port 80, internet explorer 11
-      returns an empty string for loc.port, so we need to compare loc.port
-      with an empty string if url.port is the default port 80.
-  */
-  return loc.protocol === url.protocol &&
-    loc.hostname === url.hostname &&
-    (loc.port === url.port || loc.port === '' && url.port === 80);
-};
-
-/**
- * @api private
- */
-Page.prototype._samePath = function(url) {
-  if(!isLocation) return false;
-  var window = this._window;
-  var loc = window.location;
-  return url.pathname === loc.pathname &&
-    url.search === loc.search;
-};
-
-/**
- * Remove URL encoding from the given `str`.
- * Accommodates whitespace in both x-www-form-urlencoded
- * and regular percent-encoded form.
- *
- * @param {string} val - URL component to decode
- * @api private
- */
-Page.prototype._decodeURLEncodedURIComponent = function(val) {
-  if (typeof val !== 'string') { return val; }
-  return this._decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
-};
-
+}
 /**
  * Create a new `page` instance and function
  */
