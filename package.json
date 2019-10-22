@@ -18,7 +18,7 @@
   "scripts": {
     "engine-deps": "install-engine-dependencies",
     "test": "jshint index.js test/tests.js && mocha test/tests.js",
-    "serve": "serve test",
+    "serve": "es-dev-server",
     "test-cov": "jscoverage index.js index-cov.js; PAGE_COV=1 mocha test/tests.js -R html-cov > coverage.html",
     "make": "rollup -c rollup.config.js"
   },
@@ -29,6 +29,7 @@
     "chai": "^1.10.0",
     "coveralls": "^2.11.2",
     "engine-dependencies": "^0.2.12",
+    "es-dev-server": "^1.18.5",
     "express": "^4.10.2",
     "jade": "^1.7.0",
     "jscoverage": "^0.5.9",
@@ -39,7 +40,6 @@
     "rollup": "^0.54.1",
     "rollup-plugin-commonjs": "^8.2.6",
     "rollup-plugin-node-resolve": "^3.0.2",
-    "serve": "*",
     "should": "*"
   },
   "engineDependencies": {

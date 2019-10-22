@@ -1,9 +1,10 @@
-/* globals before, after, chai, expect, page, describe, it */
-(function() {
+import globalPage from '../page.js';
 
-  'use strict';
+console.log('A', describe);
 
-  var isNode = typeof window !== 'object',
+let page = globalPage;
+
+var isNode = typeof window !== 'object',
     global = this,
     called = false,
     baseRoute = Function.prototype, // noop
@@ -12,10 +13,10 @@
     setbase = true,
     hashbang = false,
     decodeURLComponents = true,
-    chai = this.chai,
-    expect = this.expect,
-    page = this.page,
-    globalPage = this.page,
+    chai = window.chai,
+    expect = window.expect,
+    // page = this.page,
+    // globalPage = this.page,
     baseTag,
     frame,
     $,
@@ -26,16 +27,7 @@
   }
 
   before(function() {
-    if (isNode) {
-      chai = require('chai');
-      expect = chai.expect;
-      globalPage = process.env.PAGE_COV ?
-        require('../index-cov') : require('../index');
-    } else {
-      globalPage = window.page;
-      expect = chai.expect;
-    }
-
+    expect = chai.expect;
     $ = function(sel) {
       return frame.contentWindow.document.querySelector(sel);
     };
@@ -100,7 +92,7 @@
         if(options.strict != null)
           page.strict(options.strict);
         page.start(options);
-        page(base ? base + '/' : '/');
+        page.show(base ? base + '/' : '/');
         done();
       }
 
@@ -155,7 +147,7 @@
               done();
             }, 10);
           });
-          page('/async');
+          page.show('/async');
         });
       });
 
@@ -165,14 +157,14 @@
           page('/to', function() {
             done();
           });
-          page('/from');
+          page.show('/from');
         });
         it('should work with short alias', function(done) {
-          page('/one', '/two');
+          page.redirect('/one', '/two');
           page('/two', function() {
             done();
           });
-          page('/one');
+          page.show('/one');
         });
         it('should load done within redirect', function(done) {
           page('/redirect', function() {
@@ -181,7 +173,7 @@
           page('/done', function() {
             done();
           });
-          page('/redirect');
+          page.show('/redirect');
         });
       });
 
@@ -197,8 +189,8 @@
             done();
           });
 
-          page('/exit');
-          page('/');
+          page.show('/exit');
+          page.show('/');
         });
 
         it('should run async callbacks when exiting the page', function(done) {
@@ -218,8 +210,8 @@
             }, 10);
           });
 
-          page('/async-exit');
-          page('/');
+          page.show('/async-exit');
+          page.show('/');
         });
 
         it('should only run on matched routes', function(done) {
@@ -234,8 +226,8 @@
             done();
           });
 
-          page('/should-exit');
-          page('/');
+          page.show('/should-exit');
+          page.show('/');
         });
 
         it('should use the previous context', function(done) {
@@ -251,8 +243,8 @@
             done();
           });
 
-          page('/bootstrap');
-          page('/');
+          page.show('/bootstrap');
+          page.show('/');
         });
       });
 
@@ -275,12 +267,12 @@
             }, 0);
           });
 
-          page('/');
+          page.show('/');
 
-          page('/bootstrap');
+          page.show('/bootstrap');
 
           setTimeout( function() {
-            page('/bootstrap');
+            page.show('/bootstrap');
           }, 0 );
         });
 
@@ -297,8 +289,8 @@
         before(function() {
           first = replaceable('/first', function(){});
           page('/second', function() {});
-          page('/first');
-          page('/second');
+          page.show('/first');
+          page.show('/second');
         });
 
         it('should move back to history', function(done) {
@@ -317,7 +309,7 @@
 
         it('should decrement page.len on back()', function() {
           var lenAtFirst = page.len;
-          page('/second');
+          page.show('/second');
           page.back('/first');
           expect(page.len).to.be.equal(lenAtFirst);
         });
@@ -349,7 +341,7 @@
             done();
           });
 
-          page('/querystring-default');
+          page.show('/querystring-default');
         });
 
         it('should expose the query string', function(done) {
@@ -358,7 +350,7 @@
             done();
           });
 
-          page('/querystring?hello=there');
+          page.show('/querystring?hello=there');
         });
 
         it('should accommodate URL encoding', function(done) {
@@ -370,7 +362,7 @@
             done();
           });
 
-          page('/whatever?queryParam=string%20with%20whitespace');
+          page.show('/whatever?queryParam=string%20with%20whitespace');
         });
       });
 
@@ -381,7 +373,7 @@
             done();
           });
 
-          page('/pathname-default');
+          page.show('/pathname-default');
         });
 
         it('should omit the query string', function(done) {
@@ -390,7 +382,7 @@
             done();
           });
 
-          page('/pathname?hello=there');
+          page.show('/pathname?hello=there');
         });
 
         it('should accommodate URL encoding', function(done) {
@@ -400,7 +392,7 @@
             done();
           });
 
-          page('/long%20path%20with%20whitespace');
+          page.show('/long%20path%20with%20whitespace');
         });
       });
 
@@ -411,7 +403,7 @@
             done();
           });
 
-          page('/whatever/param%20with%20whitespace');
+          page.show('/whatever/param%20with%20whitespace');
         });
 
         it('should be an object', function(done) {
@@ -420,7 +412,7 @@
             expect(ctx.params).to.be.an('object');
             done();
           });
-          page('/ctxparams/test/');
+          page.show('/ctxparams/test/');
         });
         
         it('should handle optional first param', function(done) {
@@ -428,7 +420,7 @@
             expect(ctx.params[0]).to.be.undefined;
             done();
           });
-          page('/ctxparams/');
+          page.show('/ctxparams/');
         });
       });
 
@@ -508,7 +500,7 @@
         it('works with shadow paths', function() {
           page('/shadow', function() {
             expect(true).to.equal(true);
-            page('/');
+            page.show('/');
           });
 
           fireEvent($('.shadow-path'), 'click', [$('.shadow-path')]);
@@ -522,7 +514,7 @@
             done();
           });
 
-          page('/qs?test=true');
+          page.show('/qs?test=true');
         });
 
         it('should ignore query strings with params', function(done) {
@@ -531,7 +523,7 @@
             done();
           });
 
-          page('/qs/tobi?test=true');
+          page.show('/qs/tobi?test=true');
         });
 
         it('should invoke the matching callback', function(done) {
@@ -539,7 +531,7 @@
             done();
           });
 
-          page('/user/tj');
+          page.show('/user/tj');
         });
 
         it('should handle trailing slashes in path', function(done) {
@@ -551,7 +543,7 @@
             expect(page.strict()).to.equal(true);
             done();
           });
-          page('/no-trailing/');
+          page.show('/no-trailing/');
         });
 
         it('should handle trailing slashes in route', function(done) {
@@ -563,7 +555,7 @@
             expect(page.strict()).to.equal(true);
             done();
           });
-          page('/trailing');
+          page.show('/trailing');
         });
 
         it('should populate ctx.params', function(done) {
@@ -572,7 +564,7 @@
             done();
           });
 
-          page('/blog/post/something');
+          page.show('/blog/post/something');
         });
 
         it('should not include hash in ctx.pathname', function(done){
@@ -581,7 +573,7 @@
             done();
           });
 
-          page(hashbang ? '/contact' : '/contact#bang');
+          page.show(hashbang ? '/contact' : '/contact#bang');
         });
 
         describe('when next() is invoked', function() {
@@ -598,7 +590,7 @@
               done();
             });
 
-            page('/forum/1/thread/2');
+            page.show('/forum/1/thread/2');
           });
         });
 
@@ -607,7 +599,7 @@
             page(function() {
               done();
             });
-            page('/whathever');
+            page.show('/whathever');
           });
         });
       });
@@ -752,15 +744,15 @@
   describe('Environments without the URL constructor', function() {
     var URLC;
     before(function(done) {
-      URLC = global.URL;
-      global.URL = undefined;
+      URLC = window.URL;
+      window.URL = undefined;
       beforeTests(null, done);
     });
 
     tests();
 
     after(function() {
-      global.URL = URLC;
+      window.URL = URLC;
       afterTests();
     });
   });
@@ -791,5 +783,3 @@
       page('/about');
     });
   });
-
-}).call(this);
