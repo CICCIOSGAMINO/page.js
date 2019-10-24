@@ -32,6 +32,11 @@ export interface StartOptions {
   dispatch?: boolean;
 }
 
+let windowLoaded = document.readyState === 'complete';
+if (!windowLoaded) {
+  window.addEventListener('load', () => setTimeout(() => windowLoaded = true, 0));
+}
+
 /**
  * The page instance
  */
@@ -404,31 +409,19 @@ export class Page {
 
   /**
    * Handle "populate" events.
-   * @api private
    */
-  _onpopstate = (() => {
-    var loaded = false;
-    if (document.readyState === 'complete') {
-      loaded = true;
-    } else {
-      window.addEventListener('load', function() {
-        setTimeout(function() {
-          loaded = true;
-        }, 0);
-      });
+  private _onpopstate = (e: PopStateEvent) => {
+    if (!windowLoaded) {
+      return;
     }
-    return (e) => {
-      if (!loaded) return;
-      // var page = this;
-      if (e.state) {
-        var path = e.state.path;
-        this.replace(path, e.state);
-      } else {
-        var loc = this._window.location;
-        this.show(loc.pathname + loc.search + loc.hash, undefined, undefined, false);
-      }
-    };
-  })();
+    if (e.state) {
+      const path = e.state.path;
+      this.replace(path, e.state);
+    } else {
+      const loc = this._window.location;
+      this.show(loc.pathname + loc.search + loc.hash, undefined, undefined, false);
+    }
+  };
 
   /**
    * Convert to a URL object
