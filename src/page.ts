@@ -310,6 +310,10 @@ export class Page {
     }
   }
 
+  create() {
+    return new Page();
+  }
+
   /**
    * Handle "click" events.
    */
@@ -487,90 +491,6 @@ export class Page {
     return this._decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
   }
 }
-/**
- * Create a new `page` instance and function
- */
-function createPage() {
-  var pageInstance = new Page();
-
-  function pageFn(/* args */) {
-    return page.apply(pageInstance, arguments);
-  }
-
-  // Copy all of the things over. In 2.0 maybe we use setPrototypeOf
-  pageFn.callbacks = pageInstance.callbacks;
-  pageFn.exits = pageInstance.exits;
-  pageFn.base = pageInstance.base.bind(pageInstance);
-  pageFn.strict = pageInstance.strict.bind(pageInstance);
-  pageFn.start = pageInstance.start.bind(pageInstance);
-  pageFn.stop = pageInstance.stop.bind(pageInstance);
-  pageFn.route = pageInstance.route.bind(pageInstance);
-  pageFn.show = pageInstance.show.bind(pageInstance);
-  pageFn.back = pageInstance.back.bind(pageInstance);
-  pageFn.redirect = pageInstance.redirect.bind(pageInstance);
-  pageFn.replace = pageInstance.replace.bind(pageInstance);
-  pageFn.dispatch = pageInstance.dispatch.bind(pageInstance);
-  pageFn.exit = pageInstance.exit.bind(pageInstance);
-  pageFn.configure = pageInstance.configure.bind(pageInstance);
-  pageFn.sameOrigin = pageInstance.sameOrigin.bind(pageInstance);
-  pageFn.clickHandler = pageInstance.clickHandler.bind(pageInstance);
-
-  pageFn.create = createPage;
-
-  Object.defineProperty(pageFn, 'len', {
-    get: function(){
-      return pageInstance.len;
-    },
-    set: function(val) {
-      pageInstance.len = val;
-    }
-  });
-
-  Object.defineProperty(pageFn, 'current', {
-    get: function(){
-      return pageInstance.current;
-    },
-    set: function(val) {
-      pageInstance.current = val;
-    }
-  });
-
-  // In 2.0 these can be named exports
-  pageFn.Context = Context;
-  pageFn.Route = Route;
-
-  return pageFn;
-}
-
-/**
- * Register `path` with callback `fn()`,
- * or route `path`, or redirection,
- * or `page.start()`.
- *
- *   page(fn);
- *   page('*', fn);
- *   page('/user/:id', load, user);
- *   page('/user/' + user.id, { some: 'thing' });
- *   page('/user/' + user.id);
- *   page('/from', '/to')
- *   page();
- *
- * @param {string|!Function|!Object} path
- * @param {Function=} fn
- * @api public
- */
-function page(path, fn) {
-  if ('function' === typeof path) {
-    throw new Error('Use page.route()');
-  }
-  if ('function' === typeof fn) {
-    throw new Error('Use page.route()');
-  } else if ('string' === typeof path) {
-    throw new Error('Use page.show()');
-  } else {
-    throw new Error('Use page.start()');
-  }
-}
 
 /**
  * Unhandled `ctx`. When it's not the initial
@@ -633,7 +553,7 @@ export class Context {
   hash;
 
   constructor(path, state, pageInstance) {
-    var _page = this.page = pageInstance || page;
+    var _page = this.page = pageInstance || globalPage;
     var window = _page._window;
     var hashbang = _page._hashbang;
 
@@ -771,5 +691,5 @@ class Route {
   }
 }
 
-export const globalPage = createPage();
+export const globalPage = new Page(); //createPage();
 export default globalPage;
