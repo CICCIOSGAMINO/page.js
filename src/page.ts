@@ -5,38 +5,58 @@ import pathtoRegexp from './path-to-regex.js';
  */
 const clickEvent = document.ontouchstart ? 'touchstart' : 'click';
 
+export type Callback = (context: Context, next: () => void) => void;
+
+export interface PageOptions {
+  window?: Window;
+  decodeURLComponents?: boolean;
+  popstate?: boolean;
+  click?: boolean;
+  hashbang?: boolean;
+}
+
+export interface StartOptions {
+  /**
+   * bind to click events [true]
+   */
+  click?: boolean;
+
+  /**
+   * bind to popstate [true]
+   */
+  popstate?: boolean;
+
+  /**
+   * perform initial dispatch [true]
+   */
+  dispatch?: boolean;
+}
+
 /**
  * The page instance
- * @api private
  */
 export class Page {
-  // public things
-  callbacks = [];
+  callbacks: Callback[] = [];
   exits = [];
   current = '';
   len = 0;
 
-  // private things
-  _decodeURLComponents = true;
-  _base = '';
-  _strict = false;
-  _running = false;
-  _hashbang = false;
+  private _decodeURLComponents = true;
+  private _base = '';
+  private _strict = false;
+  private _running = false;
+  _hashbang = false; /* Read by Context */
+  _window: Window; /* Read by Context */
+  private _popstate: boolean;
+  private _click: boolean;
 
-  _window;
-  _popstate;
-  _click;
-
-  prevContext;
+  private prevContext: Context;
 
   /**
    * Configure the instance of page. This can be called multiple times.
-   *
-   * @param {Object} options
-   * @api public
    */
-  configure(options) {
-    var opts = options || {};
+  configure(options: PageOptions) {
+    const opts = options || {};
 
     this._window = opts.window || window;
     this._decodeURLComponents = opts.decodeURLComponents !== false;
@@ -44,7 +64,7 @@ export class Page {
     this._click = opts.click !== false;
     this._hashbang = !!opts.hashbang;
 
-    var _window = this._window;
+    const _window = this._window;
     if(this._popstate) {
       _window.addEventListener('popstate', this._onpopstate, false);
     } else {
@@ -62,11 +82,8 @@ export class Page {
 
   /**
    * Get or set basepath to `path`.
-   *
-   * @param {string} path
-   * @api public
    */
-  base(path) {
+  base(path?: string) {
     if (0 === arguments.length) return this._base;
     this._base = path;
   }
@@ -74,9 +91,7 @@ export class Page {
   /**
    * Gets the `base`, which depends on whether we are using History or
    * hashbang routing.
-
-    * @api private
-    */
+   */
   _getBase() {
     var base = this._base;
     if(!!base) return base;
@@ -91,11 +106,8 @@ export class Page {
 
   /**
    * Get or set strict path matching to `enable`
-   *
-   * @param {boolean} enable
-   * @api public
    */
-  strict(enable) {
+  strict(enable?: boolean) {
     if (0 === arguments.length) return this._strict;
     this._strict = enable;
   }
@@ -104,24 +116,20 @@ export class Page {
    * Bind with the given `options`.
    *
    * Options:
-   *
-   *    - `click` bind to click events [true]
-   *    - `popstate` bind to popstate [true]
-   *    - `dispatch` perform initial dispatch [true]
-   *
-   * @param {Object} options
-   * @api public
+   *   - `click` bind to click events [true]
+   *   - `popstate` bind to popstate [true]
+   *   - `dispatch` perform initial dispatch [true]
    */
-  start(options) {
-    var opts = options || {};
+  start(options: StartOptions) {
+    const opts = options || {};
     this.configure(opts);
 
     if (false === opts.dispatch) return;
     this._running = true;
 
-    var url;
-    var window = this._window;
-    var loc = window.location;
+    let url;
+    const window = this._window;
+    const loc = window.location;
 
     if(this._hashbang && ~loc.hash.indexOf('#!')) {
       url = loc.hash.substr(2) + loc.search;
@@ -136,8 +144,6 @@ export class Page {
 
   /**
    * Unbind click and popstate event handlers.
-   *
-   * @api public
    */
   stop() {
     if (!this._running) return;
@@ -145,7 +151,7 @@ export class Page {
     this.len = 0;
     this._running = false;
 
-    var window = this._window;
+    const window = this._window;
     this._click && window.document.removeEventListener(clickEvent, this.clickHandler, false);
     window.removeEventListener('popstate', this._onpopstate, false);
     window.removeEventListener('hashchange', this._onpopstate, false);
@@ -465,7 +471,7 @@ export class Page {
     */
     return loc.protocol === url.protocol &&
       loc.hostname === url.hostname &&
-      (loc.port === url.port || loc.port === '' && url.port === 80);
+      (loc.port === url.port || loc.port === '' && url.port === '80');
   }
 
   /**
