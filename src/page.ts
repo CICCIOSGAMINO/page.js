@@ -357,7 +357,7 @@ export class Page {
     }
 
     // ensure non-hash for the same path
-    var link = el.getAttribute('href');
+    const link = el.getAttribute('href');
     if (!this._hashbang && this._samePath(el) && ((el as HTMLAnchorElement).hash || '#' === link)) {
       return;
     }
@@ -443,14 +443,9 @@ export class Page {
       (loc.port === url.port || loc.port === '' && url.port === '80');
   }
 
-  /**
-   * @api private
-   */
-  _samePath(url) {
-    var window = this._window;
-    var loc = window.location;
-    return url.pathname === loc.pathname &&
-      url.search === loc.search;
+  private _samePath(url: HTMLAnchorElement | SVGAElement) {
+    const loc = this._window.location;
+    return (url as any).pathname === loc.pathname && (url as any).search === loc.search;
   }
 
   /**
@@ -458,10 +453,9 @@ export class Page {
    * Accommodates whitespace in both x-www-form-urlencoded
    * and regular percent-encoded form.
    *
-   * @param {string} val - URL component to decode
-   * @api private
+   * @param val - URL component to decode
    */
-  _decodeURLEncodedURIComponent(val) {
+  private _decodeURLEncodedURIComponent(val: string) {
     if (typeof val !== 'string') { return val; }
     return this._decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
   }
