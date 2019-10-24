@@ -172,36 +172,32 @@ export class Page {
 
   /**
    * Show `path` with optional `state` object.
-   *
-   * @param {string} path
-   * @param {Object=} state
-   * @param {boolean=} dispatch
-   * @param {boolean=} push
-   * @return {!Context}
-   * @api public
    */
-  show(path, state?, dispatch?, push?) {
-    var ctx = new Context(path, state, this),
-      prev = this.prevContext;
-    this.prevContext = ctx;
-    this.current = ctx.path;
-    if (false !== dispatch) this.dispatch(ctx, prev);
-    if (false !== ctx.handled && false !== push) ctx.pushState();
-    return ctx;
+  show(path: string, state?: unknown, dispatch?: boolean, push?: boolean): Context {
+    const context = new Context(path, state, this);
+    const prev = this.prevContext;
+
+    this.prevContext = context;
+    this.current = context.path;
+    if (false !== dispatch) {
+      this.dispatch(context, prev);
+    }
+    if (false !== context.handled && false !== push) {
+      context.pushState();
+    }
+    return context;
   }
 
   /**
    * Goes back in the history
    * Back should always let the current route push state and then go back.
    *
-   * @param {string} path - fallback path to go back if no more history exists, if undefined defaults to page.base
-   * @param {Object=} state
-   * @api public
+   * @param path - fallback path to go back if no more history exists, if undefined defaults to page.base
    */
-  back(path, state) {
-    var page = this;
+  back(path: string, state: unknown) {
+    const page = this;
     if (this.len > 0) {
-      var window = this._window;
+      const window = this._window;
       // this may need more testing to see if all browsers
       // wait for the next tick to go back in history
       window.history.back();
