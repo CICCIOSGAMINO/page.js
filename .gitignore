@@ -16,3 +16,7 @@ path-to-regex.d.ts
 path-to-regex.d.ts.map
 path-to-regex.js
 path-to-regex.js.map
+test/tests.d.ts
+test/tests.d.ts.map
+test/tests.js
+test/tests.js.map

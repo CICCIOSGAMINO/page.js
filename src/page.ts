@@ -30,6 +30,10 @@ export interface StartOptions {
    * perform initial dispatch [true]
    */
   dispatch?: boolean;
+
+  hashbang?: boolean;
+
+  window?: Window;
 }
 
 let windowLoaded = document.readyState === 'complete';
@@ -89,7 +93,9 @@ export class Page {
    * Get or set basepath to `path`.
    */
   base(path?: string) {
-    if (0 === arguments.length) return this._base;
+    if (0 === arguments.length) {
+      return this._base;
+    }
     this._base = path;
   }
 
@@ -163,8 +169,8 @@ export class Page {
   }
 
   route(callback: Callback): void;
-  route(path: string, ...callbacks: Callback[]): void;
-  route(pathOrCallback: string | Callback, ...callbacks: Callback[]): void {
+  route(path: string|RegExp, ...callbacks: Callback[]): void;
+  route(pathOrCallback: string|RegExp|Callback, ...callbacks: Callback[]): void {
     const path = (typeof pathOrCallback === 'function') ? '*' : pathOrCallback;
     if (typeof pathOrCallback === 'function') {
       callbacks.push(pathOrCallback);
@@ -290,7 +296,7 @@ export class Page {
    * on the previous context when a new
    * page is visited.
    */
-  exit(path: string, fn: Callback): void;
+  exit(path: string, ...exits: Callback[]): void;
   exit(fn: Callback): void;
   exit(pathOrCallback: string | Callback, ...exits: Callback[]): void {
     const path = (typeof pathOrCallback === 'function') ? '*' : pathOrCallback;
@@ -609,12 +615,12 @@ export interface RouteOptions {
 class Route {
 
   page: Page;
-  path: string;
+  path: string|RegExp;
   method: 'GET';
   regexp: RegExp;
   keys: Array<{name: string}>;
 
-  constructor(path: string, options?: RouteOptions, page: Page = globalPage) {
+  constructor(path: string|RegExp, options?: RouteOptions, page: Page = globalPage) {
     this.page = page || globalPage;
     const opts = options || {};
     opts.strict = opts.strict || page._strict;

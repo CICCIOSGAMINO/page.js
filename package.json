@@ -27,6 +27,8 @@
     "path-to-regexp": "~1.2.1"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.4",
+    "@types/mocha": "^5.2.7",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "engine-dependencies": "^0.2.12",
