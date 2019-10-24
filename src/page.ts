@@ -307,9 +307,7 @@ export class Page {
    * Handle "click" events.
    */
   clickHandler = (e: MouseEvent) => {
-    if (this._which(e) !== 1
-      || e.metaKey || e.ctrlKey || e.shiftKey
-      || e.defaultPrevented) {
+    if (e.defaultPrevented || e.button !== 1 || e.metaKey || e.ctrlKey || e.shiftKey) {
       return;
     }
 
@@ -431,14 +429,6 @@ export class Page {
       }
     };
   })();
-
-  /**
-   * Event button.
-   */
-  _which(e) {
-    e = e || this._window.event;
-    return null == e.which ? e.button : e.which;
-  }
 
   /**
    * Convert to a URL object
