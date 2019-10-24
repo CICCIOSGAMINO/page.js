@@ -6,3 +6,13 @@ npm-debug.log
 index-cov.js
 .DS_Store
 package-lock.json
+
+# compler output
+page.d.ts
+page.d.ts.map
+page.js
+page.js.map
+path-to-regex.d.ts
+path-to-regex.d.ts.map
+path-to-regex.js
+path-to-regex.js.map

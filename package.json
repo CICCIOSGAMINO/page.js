@@ -16,6 +16,7 @@
   "browser": "page.js",
   "module": "page.mjs",
   "scripts": {
+    "build": "tsc",
     "engine-deps": "install-engine-dependencies",
     "test": "jshint index.js test/tests.js && mocha test/tests.js",
     "serve": "es-dev-server",
@@ -40,7 +41,8 @@
     "rollup": "^0.54.1",
     "rollup-plugin-commonjs": "^8.2.6",
     "rollup-plugin-node-resolve": "^3.0.2",
-    "should": "*"
+    "should": "*",
+    "typescript": "^3.7.0-beta"
   },
   "engineDependencies": {
     "node": {

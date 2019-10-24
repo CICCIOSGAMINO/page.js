@@ -7,7 +7,7 @@ import pathtoRegexp from './path-to-regex.js';
 const hasDocument = ('undefined' !== typeof document);
 const hasWindow = ('undefined' !== typeof window);
 const hasHistory = ('undefined' !== typeof history);
-const hasProcess = typeof process !== 'undefined';
+const hasProcess = false;
 
 /**
  * Detect click event
@@ -19,13 +19,13 @@ const clickEvent = hasDocument && document.ontouchstart ? 'touchstart' : 'click'
  * history.location generated polyfill in https://github.com/devote/HTML5-History-API
  */
 
-const isLocation = hasWindow && !!(window.history.location || window.location);
+const isLocation = hasWindow && !!((window.history as any).location || window.location);
 
 /**
  * The page instance
  * @api private
  */
-class Page {
+export class Page {
   // public things
   callbacks = [];
   exits = [];
@@ -39,9 +39,11 @@ class Page {
   _running = false;
   _hashbang = false;
 
-  // bound functions
-  clickHandler = this.clickHandler.bind(this);
-  // _onpopstate = this._onpopstate.bind(this);
+  _window;
+  _popstate;
+  _click;
+
+  prevContext;
 
   /**
    * Configure the instance of page. This can be called multiple times.
@@ -181,7 +183,7 @@ class Page {
    * @return {!Context}
    * @api public
    */
-  show(path, state, dispatch, push) {
+  show(path, state?, dispatch?, push?) {
     var ctx = new Context(path, state, this),
       prev = this.prevContext;
     this.prevContext = ctx;
@@ -256,7 +258,7 @@ class Page {
    * @return {!Context}
    * @api public
    */
-  replace(path, state, init, dispatch) {
+  replace(path, state?, init?, dispatch?) {
     var ctx = new Context(path, state, this),
       prev = this.prevContext;
     this.prevContext = ctx;
@@ -320,7 +322,7 @@ class Page {
   /**
    * Handle "click" events.
    */
-  clickHandler(e) {
+  clickHandler = (e) => {
     if (1 !== this._which(e)) return;
 
     if (e.metaKey || e.ctrlKey || e.shiftKey) return;
@@ -771,7 +773,7 @@ Route.prototype.match = function(path, params) {
   for (var i = 1, len = m.length; i < len; ++i) {
     var key = keys[i - 1];
     var val = this.page._decodeURLEncodedURIComponent(m[i]);
-    if (val !== undefined || !(hasOwnProperty.call(params, key.name))) {
+    if (val !== undefined || !(params.hasOwnProperty(key.name))) {
       params[key.name] = val;
     }
   }

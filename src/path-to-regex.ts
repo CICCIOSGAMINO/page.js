@@ -379,7 +379,7 @@ function pathToRegexp (path, keys, options) {
   }
 
   if (path instanceof RegExp) {
-    return regexpToRegexp(path, keys, options)
+    return regexpToRegexp(path, keys)
   }
 
   if (Array.isArray(path)) {
