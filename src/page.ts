@@ -104,11 +104,13 @@ export class Page {
    * hashbang routing.
    */
   _getBase() {
-    var base = this._base;
-    if(!!base) return base;
-    var loc = this._window && this._window.location;
+    let base = this._base;
+    if (!!base) {
+      return base;
+    }
+    const loc = this._window && this._window.location;
 
-    if(this._hashbang && loc && loc.protocol === 'file:') {
+    if (this._hashbang && loc && loc.protocol === 'file:') {
       base = loc.pathname;
     }
 
