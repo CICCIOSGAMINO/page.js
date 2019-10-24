@@ -194,22 +194,17 @@ export class Page {
    *
    * @param path - fallback path to go back if no more history exists, if undefined defaults to page.base
    */
-  back(path: string, state: unknown) {
+  back(path?: string, state?: unknown) {
     const page = this;
     if (this.len > 0) {
-      const window = this._window;
       // this may need more testing to see if all browsers
       // wait for the next tick to go back in history
-      window.history.back();
+      this._window.history.back();
       this.len--;
     } else if (path) {
-      setTimeout(function() {
-        page.show(path, state);
-      });
+      setTimeout(() => this.show(path, state));
     } else {
-      setTimeout(function() {
-        page.show(page._getBase(), state);
-      });
+      setTimeout(() => this.show(page._getBase(), state));
     }
   }
 
