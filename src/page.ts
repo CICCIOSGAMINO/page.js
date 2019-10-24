@@ -280,7 +280,7 @@ export class Page {
         return;
       }
       if (!fn) {
-        return unhandled.call(this, context);
+        return this.unhandled(context);
       }
       fn(context, nextEnter);
     }
@@ -467,32 +467,32 @@ export class Page {
     if (typeof val !== 'string') { return val; }
     return this._decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
   }
-}
 
-/**
- * Unhandled `ctx`. When it's not the initial
- * popstate then redirect. If you wish to handle
- * 404s on your own use `page('*', callback)`.
- *
- * @param {Context} ctx
- * @api private
- */
-function unhandled(ctx) {
-  if (ctx.handled) return;
-  var current;
-  var page = this;
-  var window = page._window;
+  /**
+   * Unhandled `ctx`. When it's not the initial
+   * popstate then redirect. If you wish to handle
+   * 404s on your own use `page('*', callback)`.
+   */
+  unhandled(ctx: Context) {
+    if (ctx.handled) {
+      return;
+    }
+    let current: string;
+    const window = this._window;
 
-  if (page._hashbang) {
-    current = this._getBase() + window.location.hash.replace('#!', '');
-  } else {
-    current = window.location.pathname + window.location.search;
+    if (this._hashbang) {
+      current = this._getBase() + window.location.hash.replace('#!', '');
+    } else {
+      current = window.location.pathname + window.location.search;
+    }
+
+    if (current === ctx.canonicalPath) {
+      return;
+    }
+    this.stop();
+    ctx.handled = false;
+    window.location.href = ctx.canonicalPath;
   }
-
-  if (current === ctx.canonicalPath) return;
-  page.stop();
-  ctx.handled = false;
-  window.location.href = ctx.canonicalPath;
 }
 
 /**
