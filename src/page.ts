@@ -212,75 +212,64 @@ export class Page {
    * Register route to redirect from one path to other
    * or just redirect to another route
    *
-   * @param {string} from - if param 'to' is undefined redirects to 'from'
-   * @param {string=} to
-   * @api public
+   * @param from - if param 'to' is undefined redirects to 'from'
    */
-  redirect(from, to) {
-    var inst = this;
-
+  redirect(from: string, to?: string) {
     // Define route from a path to another
     if ('string' === typeof from && 'string' === typeof to) {
-      this.route(from, function(e) {
-        setTimeout(function() {
-          inst.replace(/** @type {!string} */ (to));
-        }, 0);
-      });
+      this.route(from, () => setTimeout(() => this.replace(to), 0));
     }
 
     // Wait for the push state and replace it with another
     if ('string' === typeof from && 'undefined' === typeof to) {
-      setTimeout(function() {
-        inst.replace(from);
-      }, 0);
+      setTimeout(() => this.replace(from), 0);
     }
   }
 
   /**
    * Replace `path` with optional `state` object.
-   *
-   * @param {string} path
-   * @param {Object=} state
-   * @param {boolean=} init
-   * @param {boolean=} dispatch
-   * @return {!Context}
-   * @api public
    */
-  replace(path, state?, init?, dispatch?) {
-    var ctx = new Context(path, state, this),
-      prev = this.prevContext;
-    this.prevContext = ctx;
-    this.current = ctx.path;
-    ctx.init = init;
-    ctx.save(); // save before dispatching, which may redirect
-    if (false !== dispatch) this.dispatch(ctx, prev);
-    return ctx;
+  replace(path: string, state?: unknown, init?: boolean, dispatch?: boolean) {
+    const context = new Context(path, state, this);
+    const prev = this.prevContext;
+    this.prevContext = context;
+    this.current = context.path;
+    context.init = init;
+
+    // save before dispatching, which may redirect
+    context.save();
+    if (false !== dispatch) {
+      this.dispatch(context, prev);
+    }
+    return context;
   }
 
   /**
-   * Dispatch the given `ctx`.
-   *
-   * @param {Context} ctx
-   * @api private
+   * Dispatch the given `context`.
    */
-  dispatch(ctx, prev) {
-    var i = 0, j = 0, page = this;
+  dispatch(context: Context, prev?: Context) {
+    let i = 0;
+    let j = 0;
 
-    function nextExit() {
-      var fn = page.exits[j++];
-      if (!fn) return nextEnter();
+    const nextExit = () => {
+      const fn = this.exits[j++];
+      if (!fn) {
+        return nextEnter();
+      }
       fn(prev, nextExit);
     }
 
-    function nextEnter() {
-      var fn = page.callbacks[i++];
+    const nextEnter = () => {
+      const fn = this.callbacks[i++];
 
-      if (ctx.path !== page.current) {
-        ctx.handled = false;
+      if (context.path !== this.current) {
+        context.handled = false;
         return;
       }
-      if (!fn) return unhandled.call(page, ctx);
-      fn(ctx, nextEnter);
+      if (!fn) {
+        return unhandled.call(this, context);
+      }
+      fn(context, nextEnter);
     }
 
     if (prev) {
