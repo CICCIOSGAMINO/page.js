@@ -48,7 +48,7 @@ export class Page {
 
   private _decodeURLComponents = true;
   private _base = '';
-  private _strict = false;
+  _strict = false; /* Read by Route */
   private _running = false;
   _hashbang = false; /* Read by Context */
   _window: Window; /* Read by Context */
@@ -162,9 +162,9 @@ export class Page {
     window.removeEventListener('hashchange', this._onpopstate, false);
   }
 
-  route(callback: Function): void;
-  route(path: string, ...callbacks: Function[]): void;
-  route(pathOrCallback: string | Function, ...callbacks: Function[]): void {
+  route(callback: Callback): void;
+  route(path: string, ...callbacks: Callback[]): void;
+  route(pathOrCallback: string | Callback, ...callbacks: Callback[]): void {
     const path = (typeof pathOrCallback === 'function') ? '*' : pathOrCallback;
     if (typeof pathOrCallback === 'function') {
       callbacks.push(pathOrCallback);
@@ -290,9 +290,9 @@ export class Page {
    * on the previous context when a new
    * page is visited.
    */
-  exit(path: string, fn: Function): void;
-  exit(fn: Function): void;
-  exit(pathOrCallback: string | Function, ...exits: Function[]): void {
+  exit(path: string, fn: Callback): void;
+  exit(fn: Callback): void;
+  exit(pathOrCallback: string | Callback, ...exits: Callback[]): void {
     const path = (typeof pathOrCallback === 'function') ? '*' : pathOrCallback;
     if (typeof pathOrCallback === 'function') {
       exits.push(pathOrCallback);
@@ -586,31 +586,37 @@ export class Context {
   }
 }
 
+export interface RouteOptions {
+  /**
+   * enable case-sensitive routes
+   */
+  sensitive?: boolean;
+
+  /**
+   * enable strict matching for trailing slashes
+   */
+  strict?: boolean;
+}
+
 /**
  * Initialize `Route` with the given HTTP `path`,
  * and an array of `callbacks` and `options`.
  *
  * Options:
- *
  *   - `sensitive`    enable case-sensitive routes
  *   - `strict`       enable strict matching for trailing slashes
- *
- * @constructor
- * @param {string} path
- * @param {Object=} options
- * @api private
  */
 class Route {
 
-  page;
-  path;
-  method;
-  regexp;
-  keys;
+  page: Page;
+  path: string;
+  method: 'GET';
+  regexp: RegExp;
+  keys: Array<{name: string}>;
 
-  constructor(path, options, page) {
-    var _page = this.page = page || globalPage;
-    var opts = options || {};
+  constructor(path: string, options?: RouteOptions, page: Page = globalPage) {
+    this.page = page || globalPage;
+    const opts = options || {};
     opts.strict = opts.strict || page._strict;
     this.path = (path === '*') ? '(.*)' : path;
     this.method = 'GET';
@@ -618,17 +624,13 @@ class Route {
   }
 
   /**
-   * Return route middleware with
-   * the given callback `fn()`.
-   *
-   * @param {Function} fn
-   * @return {Function}
-   * @api public
+   * Return route middleware with the given callback `fn()`.
    */
-  middleware(fn) {
-    var self = this;
-    return function(ctx, next) {
-      if (self.match(ctx.path, ctx.params)) return fn(ctx, next);
+  middleware(fn: Callback): Callback {
+    return (ctx, next) => {
+      if (this.match(ctx.path, ctx.params)) {
+        return fn(ctx, next);
+      }
       next();
     };
   }
@@ -636,30 +638,26 @@ class Route {
   /**
    * Check if this route matches `path`, if so
    * populate `params`.
-   *
-   * @param {string} path
-   * @param {Object} params
-   * @return {boolean}
-   * @api private
    */
-  match(path, params) {
-    var keys = this.keys,
-      qsIndex = path.indexOf('?'),
-      pathname = ~qsIndex ? path.slice(0, qsIndex) : path,
-      m = this.regexp.exec(decodeURIComponent(pathname));
+  private match(path: string, params: {}): boolean {
+    const keys = this.keys;
+    const qsIndex = path.indexOf('?');
+    const pathname = ~qsIndex ? path.slice(0, qsIndex) : path;
+    const m = this.regexp.exec(decodeURIComponent(pathname));
 
     delete params[0]
 
-    if (!m) return false;
+    if (!m) {
+      return false;
+    }
 
-    for (var i = 1, len = m.length; i < len; ++i) {
-      var key = keys[i - 1];
-      var val = this.page._decodeURLEncodedURIComponent(m[i]);
+    for (let i = 1; i < m.length; ++i) {
+      const key = keys[i - 1];
+      const val = this.page._decodeURLEncodedURIComponent(m[i]);
       if (val !== undefined || !(params.hasOwnProperty(key.name))) {
         params[key.name] = val;
       }
     }
-
     return true;
   }
 }
