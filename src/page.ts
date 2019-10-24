@@ -151,8 +151,14 @@ export class Page {
     window.removeEventListener('hashchange', this._onpopstate, false);
   }
 
-  route(path: string, ...callbacks) {
-    var route = new Route(path, null, this);
+  route(callback: Function): void;
+  route(path: string, ...callbacks: Function[]): void;
+  route(pathOrCallback: string | Function, ...callbacks: Function[]): void {
+    const path = (typeof pathOrCallback === 'function') ? '*' : pathOrCallback;
+    if (typeof pathOrCallback === 'function') {
+      callbacks.push(pathOrCallback);
+    }
+    const route = new Route(path, null, this);
     for (const callback of callbacks) {
       this.callbacks.push(route.middleware(callback));
     }
@@ -218,7 +224,7 @@ export class Page {
 
     // Define route from a path to another
     if ('string' === typeof from && 'string' === typeof to) {
-      page.call(this, from, function(e) {
+      this.route(from, function(e) {
         setTimeout(function() {
           inst.replace(/** @type {!string} */ (to));
         }, 0);
@@ -554,21 +560,15 @@ function createPage() {
  * @api public
  */
 function page(path, fn) {
-  // <callback>
   if ('function' === typeof path) {
-    return page.call(this, '*', path);
+    throw new Error('Use page.route()');
   }
-
-  // route <path> to <callback ...>
   if ('function' === typeof fn) {
-    this.route(path, ...Array.from(arguments).slice(1));
-    // show <path> with [state]
+    throw new Error('Use page.route()');
   } else if ('string' === typeof path) {
     throw new Error('Use page.show()');
-    // this['string' === typeof fn ? 'redirect' : 'show'](path, fn);
-    // start [options]
   } else {
-    this.start(path);
+    throw new Error('Use page.start()');
   }
 }
 

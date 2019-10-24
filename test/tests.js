@@ -1,7 +1,5 @@
 import globalPage from '../page.js';
 
-console.log('A', describe);
-
 let page = globalPage;
 
 var isNode = typeof window !== 'object',
@@ -73,7 +71,7 @@ var isNode = typeof window !== 'object',
       options = options || {};
       page = globalPage.create();
 
-      page('/', function(ctx) {
+      page.route('/', function(ctx) {
         called = true;
         baseRoute(ctx);
       });
@@ -127,7 +125,7 @@ var isNode = typeof window !== 'object',
         }
       };
 
-      page(route, realCallback);
+      page.route(route, realCallback);
 
       return obj;
     },
@@ -138,7 +136,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should invoke the matching async callbacks', function(done) {
-          page('/async', function(ctx, next) {
+          page.route('/async', function(ctx, next) {
             setTimeout(function() {
               next();
             }, 10);
@@ -154,23 +152,23 @@ var isNode = typeof window !== 'object',
       describe('on redirect', function() {
         it('should load destination page', function(done) {
           page.redirect('/from', '/to');
-          page('/to', function() {
+          page.route('/to', function() {
             done();
           });
           page.show('/from');
         });
         it('should work with short alias', function(done) {
           page.redirect('/one', '/two');
-          page('/two', function() {
+          page.route('/two', function() {
             done();
           });
           page.show('/one');
         });
         it('should load done within redirect', function(done) {
-          page('/redirect', function() {
+          page.route('/redirect', function() {
             page.redirect('/done');
           });
-          page('/done', function() {
+          page.route('/done', function() {
             done();
           });
           page.show('/redirect');
@@ -180,7 +178,7 @@ var isNode = typeof window !== 'object',
       describe('on exit', function() {
         it('should run when exiting the page', function(done) {
           var visited = false;
-          page('/exit', function() {
+          page.route('/exit', function() {
             visited = true;
           });
 
@@ -195,7 +193,7 @@ var isNode = typeof window !== 'object',
 
         it('should run async callbacks when exiting the page', function(done) {
           var visited = false;
-          page('/async-exit', function() {
+          page.route('/async-exit', function() {
             visited = true;
           });
 
@@ -215,8 +213,8 @@ var isNode = typeof window !== 'object',
         });
 
         it('should only run on matched routes', function(done) {
-          page('/should-exit', function() {});
-          page('/', function() {});
+          page.route('/should-exit', function() {});
+          page.route('/', function() {});
 
           page.exit('/should-not-exit', function() {
             throw new Error('This exit route should not have been called');
@@ -233,8 +231,8 @@ var isNode = typeof window !== 'object',
         it('should use the previous context', function(done) {
           var unique;
 
-          page('/', function() {});
-          page('/bootstrap', function(ctx) {
+          page.route('/', function() {});
+          page.route('/bootstrap', function(ctx) {
             unique = ctx.unique = {};
           });
 
@@ -252,7 +250,7 @@ var isNode = typeof window !== 'object',
         it('should use the previous context when not dispatching', function(done) {
           var count = 0;
 
-          page('/', function() {});
+          page.route('/', function() {});
 
           page.exit(function(context) {
             var path = context.path;
@@ -288,7 +286,7 @@ var isNode = typeof window !== 'object',
 
         before(function() {
           first = replaceable('/first', function(){});
-          page('/second', function() {});
+          page.route('/second', function() {});
           page.show('/first');
           page.show('/second');
         });
@@ -315,7 +313,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('calling back() when there is nothing in the history should go to the given path', function(done){
-          page('/fourth', function(){
+          page.route('/fourth', function(){
             expect(page.len).to.be.equal(0);
             done();
           });
@@ -336,7 +334,7 @@ var isNode = typeof window !== 'object',
 
       describe('ctx.querystring', function() {
         it('should default to ""', function(done) {
-          page('/querystring-default', function(ctx) {
+          page.route('/querystring-default', function(ctx) {
             expect(ctx.querystring).to.equal('');
             done();
           });
@@ -345,7 +343,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should expose the query string', function(done) {
-          page('/querystring', function(ctx) {
+          page.route('/querystring', function(ctx) {
             expect(ctx.querystring).to.equal('hello=there');
             done();
           });
@@ -354,7 +352,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should accommodate URL encoding', function(done) {
-          page('/whatever', function(ctx) {
+          page.route('/whatever', function(ctx) {
             var expected = decodeURLComponents
               ? 'queryParam=string with whitespace'
               : 'queryParam=string%20with%20whitespace';
@@ -368,7 +366,7 @@ var isNode = typeof window !== 'object',
 
       describe('ctx.pathname', function() {
         it('should default to ctx.path', function(done) {
-          page('/pathname-default', function(ctx) {
+          page.route('/pathname-default', function(ctx) {
             expect(ctx.pathname).to.equal(base + (base && hashbang ? '#!' : '') + '/pathname-default');
             done();
           });
@@ -377,7 +375,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should omit the query string', function(done) {
-          page('/pathname', function(ctx) {
+          page.route('/pathname', function(ctx) {
             expect(ctx.pathname).to.equal(base + (base && hashbang ? '#!' : '') + '/pathname');
             done();
           });
@@ -386,7 +384,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should accommodate URL encoding', function(done) {
-          page('/long path with whitespace', function(ctx) {
+          page.route('/long path with whitespace', function(ctx) {
             expect(ctx.pathname).to.equal(base + (base && hashbang ? '#!' : '') +
               (decodeURLComponents ? '/long path with whitespace' : '/long%20path%20with%20whitespace'));
             done();
@@ -398,7 +396,7 @@ var isNode = typeof window !== 'object',
 
       describe('ctx.params', function() {
         it('should always be URL-decoded', function(done) {
-          page('/whatever/:param', function(ctx) {
+          page.route('/whatever/:param', function(ctx) {
             expect(ctx.params.param).to.equal('param with whitespace');
             done();
           });
@@ -407,7 +405,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should be an object', function(done) {
-          page('/ctxparams/:param/', function(ctx) {
+          page.route('/ctxparams/:param/', function(ctx) {
             expect(ctx.params).to.not.be.an('array');
             expect(ctx.params).to.be.an('object');
             done();
@@ -416,7 +414,7 @@ var isNode = typeof window !== 'object',
         });
         
         it('should handle optional first param', function(done) {
-          page(/^\/ctxparams\/(option1|option2)?$/, function(ctx) {
+          page.route(/^\/ctxparams\/(option1|option2)?$/, function(ctx) {
             expect(ctx.params[0]).to.be.undefined;
             done();
           });
@@ -426,7 +424,7 @@ var isNode = typeof window !== 'object',
 
       describe('ctx.handled', function() {
         it('should skip unhandled redirect if exists', function() {
-          page('/page/:page', function(ctx, next) {
+          page.route('/page/:page', function(ctx, next) {
             ctx.handled = true;
             next();
           });
@@ -437,7 +435,7 @@ var isNode = typeof window !== 'object',
 
       describe('links dispatcher', function() {
         it('should invoke the callback', function(done) {
-          page('/about', function() {
+          page.route('/about', function() {
             done();
           });
 
@@ -445,11 +443,11 @@ var isNode = typeof window !== 'object',
         });
 
         it('should handle trailing slashes in URL', function(done) {
-          page('/link-trailing', function() {
+          page.route('/link-trailing', function() {
             expect(page.strict()).to.equal(false);
             done();
           });
-          page('/link-trailing/', function() {
+          page.route('/link-trailing/', function() {
             expect(page.strict()).to.equal(true);
             done();
           });
@@ -457,11 +455,11 @@ var isNode = typeof window !== 'object',
         });
 
         it('should handle trailing slashes in route', function(done) {
-          page('/link-no-trailing/', function() {
+          page.route('/link-no-trailing/', function() {
             expect(page.strict()).to.equal(false);
             done();
           });
-          page('/link-no-trailing', function() {
+          page.route('/link-no-trailing', function() {
             expect(page.strict()).to.equal(true);
             done();
           });
@@ -469,7 +467,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should invoke the callback with the right params', function(done) {
-          page('/contact/:name', function(ctx) {
+          page.route('/contact/:name', function(ctx) {
             expect(ctx.params.name).to.equal('me');
             done();
           });
@@ -477,14 +475,14 @@ var isNode = typeof window !== 'object',
         });
 
         it('should not invoke the callback', function() {
-          page('/whoop', function(ctx) {
+          page.route('/whoop', function(ctx) {
             expect(true).to.equal(false);
           });
           fireEvent($('.whoop'), 'click');
         });
 
         it('should not fire when navigating to a different domain', function(done){
-          page('/diff-domain', function(ctx){
+          page.route('/diff-domain', function(ctx){
             expect(true).to.equal(false);
           });
 
@@ -498,7 +496,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('works with shadow paths', function() {
-          page('/shadow', function() {
+          page.route('/shadow', function() {
             expect(true).to.equal(true);
             page.show('/');
           });
@@ -510,7 +508,7 @@ var isNode = typeof window !== 'object',
 
       describe('dispatcher', function() {
         it('should ignore query strings', function(done) {
-          page('/qs', function(ctx) {
+          page.route('/qs', function(ctx) {
             done();
           });
 
@@ -518,7 +516,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should ignore query strings with params', function(done) {
-          page('/qs/:name', function(ctx) {
+          page.route('/qs/:name', function(ctx) {
             expect(ctx.params.name).to.equal('tobi');
             done();
           });
@@ -527,7 +525,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should invoke the matching callback', function(done) {
-          page('/user/:name', function(ctx) {
+          page.route('/user/:name', function(ctx) {
             done();
           });
 
@@ -535,11 +533,11 @@ var isNode = typeof window !== 'object',
         });
 
         it('should handle trailing slashes in path', function(done) {
-          page('/no-trailing', function() {
+          page.route('/no-trailing', function() {
             expect(page.strict()).to.equal(false);
             done();
           });
-          page('/no-trailing/', function() {
+          page.route('/no-trailing/', function() {
             expect(page.strict()).to.equal(true);
             done();
           });
@@ -547,11 +545,11 @@ var isNode = typeof window !== 'object',
         });
 
         it('should handle trailing slashes in route', function(done) {
-          page('/trailing/', function() {
+          page.route('/trailing/', function() {
             expect(page.strict()).to.equal(false);
             done();
           });
-          page('/trailing', function() {
+          page.route('/trailing', function() {
             expect(page.strict()).to.equal(true);
             done();
           });
@@ -559,7 +557,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should populate ctx.params', function(done) {
-          page('/blog/post/:name', function(ctx) {
+          page.route('/blog/post/:name', function(ctx) {
             expect(ctx.params.name).to.equal('something');
             done();
           });
@@ -568,7 +566,7 @@ var isNode = typeof window !== 'object',
         });
 
         it('should not include hash in ctx.pathname', function(done){
-          page('/contact', function(ctx){
+          page.route('/contact', function(ctx){
             expect(ctx.pathname).to.equal('/contact');
             done();
           });
@@ -580,12 +578,12 @@ var isNode = typeof window !== 'object',
           it('should invoke subsequent matching middleware', function(done) {
 
             var visistedFirst = false;
-            page('/forum/*', function(ctx, next) {
+            page.route('/forum/*', function(ctx, next) {
               visistedFirst = true;
               next();
             });
 
-            page('/forum/:fid/thread/:tid', function(ctx) {
+            page.route('/forum/:fid/thread/:tid', function(ctx) {
               expect(visistedFirst).to.equal(true);
               done();
             });
@@ -596,7 +594,7 @@ var isNode = typeof window !== 'object',
 
         describe('not found', function() {
           it('should invoke the not found callback', function(done) {
-            page(function() {
+            page.route(function() {
               done();
             });
             page.show('/whathever');
@@ -609,7 +607,7 @@ var isNode = typeof window !== 'object',
       page.stop();
       page.base('');
       page.strict(false);
-      //page('/');
+      //page.show('/');
       base = '';
       baseRoute = Function.prototype; // noop
       setbase = true;
@@ -627,7 +625,7 @@ var isNode = typeof window !== 'object',
 
     it('Should dispatch when going to a hash on same path', function(done){
       var cnt = 0;
-      page('/query', function(){
+      page.route('/query', function(){
         cnt++;
         if(cnt === 2) {
           done();
@@ -679,7 +677,7 @@ var isNode = typeof window !== 'object',
         expect(ctx.path).to.equal('/');
         done();
       };
-      page({ hashbang: true, window: frame.contentWindow });
+      page.start({ hashbang: true, window: frame.contentWindow });
     });
 
     after(function() {
@@ -777,9 +775,9 @@ var isNode = typeof window !== 'object',
     });
 
     it('simple route call', function(){
-      page('/about', function(ctx){
+      page.route('/about', function(ctx){
         expect(ctx.path).to.equal('/about');
       });
-      page('/about');
+      page.show('/about');
     });
   });
