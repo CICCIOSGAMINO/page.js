@@ -645,69 +645,84 @@ function escapeRegExp(s) {
  * @api public
  */
 
-function Context(path, state, pageInstance) {
-  var _page = this.page = pageInstance || page;
-  var window = _page._window;
-  var hashbang = _page._hashbang;
+export class Context {
 
-  var pageBase = _page._getBase();
-  if ('/' === path[0] && 0 !== path.indexOf(pageBase)) path = pageBase + (hashbang ? '#!' : '') + path;
-  var i = path.indexOf('?');
+  init;
+  handled;
+  page: Page;
+  canonicalPath;
+  path;
+  title;
+  state;
+  querystring;
+  pathname;
+  params;
+  hash;
 
-  this.canonicalPath = path;
-  var re = new RegExp('^' + escapeRegExp(pageBase));
-  this.path = path.replace(re, '') || '/';
-  if (hashbang) this.path = this.path.replace('#!', '') || '/';
+  constructor(path, state, pageInstance) {
+    var _page = this.page = pageInstance || page;
+    var window = _page._window;
+    var hashbang = _page._hashbang;
 
-  this.title = (hasDocument && window.document.title);
-  this.state = state || {};
-  this.state.path = path;
-  this.querystring = ~i ? _page._decodeURLEncodedURIComponent(path.slice(i + 1)) : '';
-  this.pathname = _page._decodeURLEncodedURIComponent(~i ? path.slice(0, i) : path);
-  this.params = {};
+    var pageBase = _page._getBase();
+    if ('/' === path[0] && 0 !== path.indexOf(pageBase)) path = pageBase + (hashbang ? '#!' : '') + path;
+    var i = path.indexOf('?');
 
-  // fragment
-  this.hash = '';
-  if (!hashbang) {
-    if (!~this.path.indexOf('#')) return;
-    var parts = this.path.split('#');
-    this.path = this.pathname = parts[0];
-    this.hash = _page._decodeURLEncodedURIComponent(parts[1]) || '';
-    this.querystring = this.querystring.split('#')[0];
+    this.canonicalPath = path;
+    var re = new RegExp('^' + escapeRegExp(pageBase));
+    this.path = path.replace(re, '') || '/';
+    if (hashbang) this.path = this.path.replace('#!', '') || '/';
+
+    this.title = (hasDocument && window.document.title);
+    this.state = state || {};
+    this.state.path = path;
+    this.querystring = ~i ? _page._decodeURLEncodedURIComponent(path.slice(i + 1)) : '';
+    this.pathname = _page._decodeURLEncodedURIComponent(~i ? path.slice(0, i) : path);
+    this.params = {};
+
+    // fragment
+    this.hash = '';
+    if (!hashbang) {
+      if (!~this.path.indexOf('#')) return;
+      var parts = this.path.split('#');
+      this.path = this.pathname = parts[0];
+      this.hash = _page._decodeURLEncodedURIComponent(parts[1]) || '';
+      this.querystring = this.querystring.split('#')[0];
+    }
+  }
+
+  /**
+   * Push state.
+   *
+   * @api private
+   */
+
+  pushState() {
+    var page = this.page;
+    var window = page._window;
+    var hashbang = page._hashbang;
+
+    page.len++;
+    if (hasHistory) {
+        window.history.pushState(this.state, this.title,
+          hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
+    }
+  }
+
+  /**
+   * Save the context state.
+   *
+   * @api public
+   */
+
+  save() {
+    var page = this.page;
+    if (hasHistory) {
+        page._window.history.replaceState(this.state, this.title,
+          page._hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
+    }
   }
 }
-
-/**
- * Push state.
- *
- * @api private
- */
-
-Context.prototype.pushState = function() {
-  var page = this.page;
-  var window = page._window;
-  var hashbang = page._hashbang;
-
-  page.len++;
-  if (hasHistory) {
-      window.history.pushState(this.state, this.title,
-        hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
-  }
-};
-
-/**
- * Save the context state.
- *
- * @api public
- */
-
-Context.prototype.save = function() {
-  var page = this.page;
-  if (hasHistory) {
-      page._window.history.replaceState(this.state, this.title,
-        page._hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
-  }
-};
 
 /**
  * Initialize `Route` with the given HTTP `path`,
