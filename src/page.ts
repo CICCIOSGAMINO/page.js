@@ -455,7 +455,7 @@ export class Page {
    *
    * @param val - URL component to decode
    */
-  private _decodeURLEncodedURIComponent(val: string) {
+  _decodeURLEncodedURIComponent(val: string) {
     if (typeof val !== 'string') { return val; }
     return this._decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
   }
@@ -497,58 +497,62 @@ function escapeRegExp(s) {
   return s.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
 }
 
+export interface State {
+  path?: string;
+}
+
 /**
  * Initialize a new "request" `Context`
  * with the given `path` and optional initial `state`.
- *
- * @constructor
- * @param {string} path
- * @param {Object=} state
- * @api public
  */
-
 export class Context {
 
-  init;
-  handled;
+  init: boolean;
+  handled: boolean;
   page: Page;
-  canonicalPath;
-  path;
-  title;
-  state;
-  querystring;
-  pathname;
-  params;
-  hash;
+  canonicalPath: string;
+  path: string;
+  title: string;
+  state: any;
+  querystring: string;
+  pathname: string;
+  params: any;
+  hash: string;
 
-  constructor(path, state, pageInstance) {
-    var _page = this.page = pageInstance || globalPage;
-    var window = _page._window;
-    var hashbang = _page._hashbang;
+  constructor(path: string, state: State, page: Page = globalPage) {
+    this.page = page;
+    const window = page._window;
+    const hashbang = page._hashbang;
 
-    var pageBase = _page._getBase();
-    if ('/' === path[0] && 0 !== path.indexOf(pageBase)) path = pageBase + (hashbang ? '#!' : '') + path;
-    var i = path.indexOf('?');
+    const pageBase = page._getBase();
+    if (path[0] === '/' && path.indexOf(pageBase) !== 0) {
+      path = pageBase + (hashbang ? '#!' : '') + path;
+    }
+    const i = path.indexOf('?');
 
     this.canonicalPath = path;
-    var re = new RegExp('^' + escapeRegExp(pageBase));
+    const re = new RegExp('^' + escapeRegExp(pageBase));
     this.path = path.replace(re, '') || '/';
-    if (hashbang) this.path = this.path.replace('#!', '') || '/';
+    if (hashbang) {
+      this.path = this.path.replace('#!', '') || '/';
+    }
 
     this.title = window.document.title;
     this.state = state || {};
     this.state.path = path;
-    this.querystring = ~i ? _page._decodeURLEncodedURIComponent(path.slice(i + 1)) : '';
-    this.pathname = _page._decodeURLEncodedURIComponent(~i ? path.slice(0, i) : path);
+    this.querystring = ~i ? page._decodeURLEncodedURIComponent(path.slice(i + 1)) : '';
+    this.pathname = page._decodeURLEncodedURIComponent(~i ? path.slice(0, i) : path);
     this.params = {};
 
     // fragment
     this.hash = '';
     if (!hashbang) {
-      if (!~this.path.indexOf('#')) return;
-      var parts = this.path.split('#');
+      if (!~this.path.indexOf('#')) {
+        return;
+      }
+      const parts = this.path.split('#');
       this.path = this.pathname = parts[0];
-      this.hash = _page._decodeURLEncodedURIComponent(parts[1]) || '';
+      this.hash = page._decodeURLEncodedURIComponent(parts[1]) || '';
       this.querystring = this.querystring.split('#')[0];
     }
   }
@@ -560,9 +564,9 @@ export class Context {
    */
 
   pushState() {
-    var page = this.page;
-    var window = page._window;
-    var hashbang = page._hashbang;
+    const page = this.page;
+    const window = page._window;
+    const hashbang = page._hashbang;
 
     page.len++;
     window.history.pushState(this.state, this.title,
@@ -576,7 +580,7 @@ export class Context {
    */
 
   save() {
-    var page = this.page;
+    const page = this.page;
     page._window.history.replaceState(this.state, this.title,
       page._hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
   }
