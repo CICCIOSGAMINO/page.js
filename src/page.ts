@@ -285,14 +285,17 @@ export class Page {
    * on the previous context when a new
    * page is visited.
    */
-  exit(path, fn) {
-    if (typeof path === 'function') {
-      return this.exit('*', path);
+  exit(path: string, fn: Function): void;
+  exit(fn: Function): void;
+  exit(pathOrCallback: string | Function, ...exits: Function[]): void {
+    const path = (typeof pathOrCallback === 'function') ? '*' : pathOrCallback;
+    if (typeof pathOrCallback === 'function') {
+      exits.push(pathOrCallback);
     }
 
-    var route = new Route(path, null, this);
-    for (var i = 1; i < arguments.length; ++i) {
-      this.exits.push(route.middleware(arguments[i]));
+    const route = new Route(path, null, this);
+    for (const exit of exits) {
+      this.exits.push(route.middleware(exit));
     }
   }
 
