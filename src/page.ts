@@ -151,6 +151,13 @@ export class Page {
     window.removeEventListener('hashchange', this._onpopstate, false);
   }
 
+  route(path: string, ...callbacks) {
+    var route = new Route(path, null, this);
+    for (const callback of callbacks) {
+      this.callbacks.push(route.middleware(callback));
+    }
+  }
+
   /**
    * Show `path` with optional `state` object.
    *
@@ -491,6 +498,7 @@ function createPage() {
   pageFn.strict = pageInstance.strict.bind(pageInstance);
   pageFn.start = pageInstance.start.bind(pageInstance);
   pageFn.stop = pageInstance.stop.bind(pageInstance);
+  pageFn.route = pageInstance.route.bind(pageInstance);
   pageFn.show = pageInstance.show.bind(pageInstance);
   pageFn.back = pageInstance.back.bind(pageInstance);
   pageFn.redirect = pageInstance.redirect.bind(pageInstance);
@@ -545,7 +553,6 @@ function createPage() {
  * @param {Function=} fn
  * @api public
  */
-
 function page(path, fn) {
   // <callback>
   if ('function' === typeof path) {
@@ -554,10 +561,7 @@ function page(path, fn) {
 
   // route <path> to <callback ...>
   if ('function' === typeof fn) {
-    var route = new Route(/** @type {string} */ (path), null, this);
-    for (var i = 1; i < arguments.length; ++i) {
-      this.callbacks.push(route.middleware(arguments[i]));
-    }
+    this.route(path, ...Array.from(arguments).slice(1));
     // show <path> with [state]
   } else if ('string' === typeof path) {
     throw new Error('Use page.show()');
