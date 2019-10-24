@@ -738,68 +738,69 @@ export class Context {
  * @param {Object=} options
  * @api private
  */
+class Route {
 
-function Route(path, options, page) {
-  var _page = this.page = page || globalPage;
-  var opts = options || {};
-  opts.strict = opts.strict || page._strict;
-  this.path = (path === '*') ? '(.*)' : path;
-  this.method = 'GET';
-  this.regexp = pathtoRegexp(this.path, this.keys = [], opts);
-}
+  page;
+  path;
+  method;
+  regexp;
+  keys;
 
-/**
- * Return route middleware with
- * the given callback `fn()`.
- *
- * @param {Function} fn
- * @return {Function}
- * @api public
- */
-
-Route.prototype.middleware = function(fn) {
-  var self = this;
-  return function(ctx, next) {
-    if (self.match(ctx.path, ctx.params)) return fn(ctx, next);
-    next();
-  };
-};
-
-/**
- * Check if this route matches `path`, if so
- * populate `params`.
- *
- * @param {string} path
- * @param {Object} params
- * @return {boolean}
- * @api private
- */
-
-Route.prototype.match = function(path, params) {
-  var keys = this.keys,
-    qsIndex = path.indexOf('?'),
-    pathname = ~qsIndex ? path.slice(0, qsIndex) : path,
-    m = this.regexp.exec(decodeURIComponent(pathname));
-
-  delete params[0]
-
-  if (!m) return false;
-
-  for (var i = 1, len = m.length; i < len; ++i) {
-    var key = keys[i - 1];
-    var val = this.page._decodeURLEncodedURIComponent(m[i]);
-    if (val !== undefined || !(params.hasOwnProperty(key.name))) {
-      params[key.name] = val;
-    }
+  constructor(path, options, page) {
+    var _page = this.page = page || globalPage;
+    var opts = options || {};
+    opts.strict = opts.strict || page._strict;
+    this.path = (path === '*') ? '(.*)' : path;
+    this.method = 'GET';
+    this.regexp = pathtoRegexp(this.path, this.keys = [], opts);
   }
 
-  return true;
-};
+  /**
+   * Return route middleware with
+   * the given callback `fn()`.
+   *
+   * @param {Function} fn
+   * @return {Function}
+   * @api public
+   */
+  middleware(fn) {
+    var self = this;
+    return function(ctx, next) {
+      if (self.match(ctx.path, ctx.params)) return fn(ctx, next);
+      next();
+    };
+  }
 
+  /**
+   * Check if this route matches `path`, if so
+   * populate `params`.
+   *
+   * @param {string} path
+   * @param {Object} params
+   * @return {boolean}
+   * @api private
+   */
+  match(path, params) {
+    var keys = this.keys,
+      qsIndex = path.indexOf('?'),
+      pathname = ~qsIndex ? path.slice(0, qsIndex) : path,
+      m = this.regexp.exec(decodeURIComponent(pathname));
 
-/**
- * Module exports.
- */
+    delete params[0]
+
+    if (!m) return false;
+
+    for (var i = 1, len = m.length; i < len; ++i) {
+      var key = keys[i - 1];
+      var val = this.page._decodeURLEncodedURIComponent(m[i]);
+      if (val !== undefined || !(params.hasOwnProperty(key.name))) {
+        params[key.name] = val;
+      }
+    }
+
+    return true;
+  }
+}
 
 export const globalPage = createPage();
 export default globalPage;
