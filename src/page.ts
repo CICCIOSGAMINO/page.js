@@ -306,75 +306,95 @@ export class Page {
   /**
    * Handle "click" events.
    */
-  clickHandler = (e) => {
-    if (1 !== this._which(e)) return;
-
-    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-    if (e.defaultPrevented) return;
+  clickHandler = (e: MouseEvent) => {
+    if (this._which(e) !== 1
+      || e.metaKey || e.ctrlKey || e.shiftKey
+      || e.defaultPrevented) {
+      return;
+    }
 
     // ensure link
     // use shadow dom when available if not, fall back to composedPath()
     // for browsers that only have shady
-    var el = e.target;
-    var eventPath = e.path || (e.composedPath ? e.composedPath() : null);
+    let el = e.target as Element;
 
-    if(eventPath) {
-      for (var i = 0; i < eventPath.length; i++) {
-        if (!eventPath[i].nodeName) continue;
-        if (eventPath[i].nodeName.toUpperCase() !== 'A') continue;
-        if (!eventPath[i].href) continue;
+    // TODO: this appears to be entirely untested
+    if ('composedPath' in e) {
+      for (const node of e.composedPath()) {
+        if (!(node as Node).nodeName) continue;
+        if ((node as Element).nodeName.toUpperCase() !== 'A') continue;
+        if (!(node as HTMLAnchorElement).href) continue;
 
-        el = eventPath[i];
+        el = node as HTMLAnchorElement;
         break;
       }
     }
 
     // continue ensure link
     // el.nodeName for svg links are 'a' instead of 'A'
-    while (el && 'A' !== el.nodeName.toUpperCase()) el = el.parentNode;
-    if (!el || 'A' !== el.nodeName.toUpperCase()) return;
+    while (el && 'A' !== el.nodeName.toUpperCase()) {
+      el = el.parentNode as Element;
+    }
+    const isAnchor = (e: Element): e is HTMLAnchorElement | SVGAElement =>
+        e !== undefined && e.nodeName.toUpperCase() === 'A';
+    
+    if (!isAnchor(el)) {
+      return;
+    }
 
     // check if link is inside an svg
     // in this case, both href and target are always inside an object
-    var svg = (typeof el.href === 'object') && el.href.constructor.name === 'SVGAnimatedString';
+    const svg = (typeof el.href === 'object') && el.href.constructor.name === 'SVGAnimatedString';
 
     // Ignore if tag has
     // 1. "download" attribute
     // 2. rel="external" attribute
-    if (el.hasAttribute('download') || el.getAttribute('rel') === 'external') return;
+    if (el.hasAttribute('download') || el.getAttribute('rel') === 'external') {
+      return;
+    }
 
     // ensure non-hash for the same path
     var link = el.getAttribute('href');
-    if(!this._hashbang && this._samePath(el) && (el.hash || '#' === link)) return;
+    if (!this._hashbang && this._samePath(el) && ((el as HTMLAnchorElement).hash || '#' === link)) {
+      return;
+    }
 
     // Check for mailto: in the href
-    if (link && link.indexOf('mailto:') > -1) return;
+    if (link && link.indexOf('mailto:') > -1) {
+      return;
+    }
 
     // check target
     // svg target is an object and its desired value is in .baseVal property
-    if (svg ? el.target.baseVal : el.target) return;
+    if (svg ? (el as SVGAElement).target.baseVal : el.target) {
+      return;
+    }
 
     // x-origin
     // note: svg links that are not relative don't call click events (and skip page.js)
     // consequently, all svg links tested inside page.js are relative and in the same origin
-    if (!svg && !this.sameOrigin(el.href)) return;
+    if (!svg && !this.sameOrigin(el.href)) {
+      return;
+    }
 
     // rebuild path
     // There aren't .pathname and .search properties in svg links, so we use href
     // Also, svg href is an object and its desired value is in .baseVal property
-    var path = svg ? el.href.baseVal : (el.pathname + el.search + (el.hash || ''));
+    let path = svg ? (el as SVGAElement).href.baseVal : ((el as HTMLAnchorElement).pathname + (el as HTMLAnchorElement).search + ((el as HTMLAnchorElement).hash || ''));
 
     path = path[0] !== '/' ? '/' + path : path;
 
     // same page
-    var orig = path;
-    var pageBase = this._getBase();
+    const orig = path;
+    const pageBase = this._getBase();
 
     if (path.indexOf(pageBase) === 0) {
       path = path.substr(pageBase.length);
     }
 
-    if (this._hashbang) path = path.replace('#!', '');
+    if (this._hashbang) {
+      path = path.replace('#!', '');
+    }
 
     if (pageBase && orig === path && (this._window.location.protocol !== 'file:')) {
       return;
