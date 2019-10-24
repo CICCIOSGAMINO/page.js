@@ -1,25 +1,9 @@
 import pathtoRegexp from './path-to-regex.js';
 
 /**
- * Short-cuts for global-object checks
- */
-
-const hasDocument = ('undefined' !== typeof document);
-const hasWindow = ('undefined' !== typeof window);
-const hasHistory = ('undefined' !== typeof history);
-const hasProcess = false;
-
-/**
  * Detect click event
  */
-const clickEvent = hasDocument && document.ontouchstart ? 'touchstart' : 'click';
-
-/**
- * To work properly with the URL
- * history.location generated polyfill in https://github.com/devote/HTML5-History-API
- */
-
-const isLocation = hasWindow && !!((window.history as any).location || window.location);
+const clickEvent = document.ontouchstart ? 'touchstart' : 'click';
 
 /**
  * The page instance
@@ -54,30 +38,26 @@ export class Page {
   configure(options) {
     var opts = options || {};
 
-    this._window = opts.window || (hasWindow && window);
+    this._window = opts.window || window;
     this._decodeURLComponents = opts.decodeURLComponents !== false;
-    this._popstate = opts.popstate !== false && hasWindow;
-    this._click = opts.click !== false && hasDocument;
+    this._popstate = opts.popstate !== false;
+    this._click = opts.click !== false;
     this._hashbang = !!opts.hashbang;
 
     var _window = this._window;
     if(this._popstate) {
       _window.addEventListener('popstate', this._onpopstate, false);
-    } else if(hasWindow) {
+    } else {
       _window.removeEventListener('popstate', this._onpopstate, false);
     }
 
     if (this._click) {
       _window.document.addEventListener(clickEvent, this.clickHandler, false);
-    } else if(hasDocument) {
+    } else {
       _window.document.removeEventListener(clickEvent, this.clickHandler, false);
     }
 
-    if(this._hashbang && hasWindow && !hasHistory) {
-      _window.addEventListener('hashchange', this._onpopstate, false);
-    } else if(hasWindow) {
-      _window.removeEventListener('hashchange', this._onpopstate, false);
-    }
+    _window.removeEventListener('hashchange', this._onpopstate, false);
   }
 
   /**
@@ -100,9 +80,9 @@ export class Page {
   _getBase() {
     var base = this._base;
     if(!!base) return base;
-    var loc = hasWindow && this._window && this._window.location;
+    var loc = this._window && this._window.location;
 
-    if(hasWindow && this._hashbang && loc && loc.protocol === 'file:') {
+    if(this._hashbang && loc && loc.protocol === 'file:') {
       base = loc.pathname;
     }
 
@@ -140,17 +120,15 @@ export class Page {
     this._running = true;
 
     var url;
-    if(isLocation) {
-      var window = this._window;
-      var loc = window.location;
+    var window = this._window;
+    var loc = window.location;
 
-      if(this._hashbang && ~loc.hash.indexOf('#!')) {
-        url = loc.hash.substr(2) + loc.search;
-      } else if (this._hashbang) {
-        url = loc.search + loc.hash;
-      } else {
-        url = loc.pathname + loc.search + loc.hash;
-      }
+    if(this._hashbang && ~loc.hash.indexOf('#!')) {
+      url = loc.hash.substr(2) + loc.search;
+    } else if (this._hashbang) {
+      url = loc.search + loc.hash;
+    } else {
+      url = loc.pathname + loc.search + loc.hash;
     }
 
     this.replace(url, null, true, opts.dispatch);
@@ -169,8 +147,8 @@ export class Page {
 
     var window = this._window;
     this._click && window.document.removeEventListener(clickEvent, this.clickHandler, false);
-    hasWindow && window.removeEventListener('popstate', this._onpopstate, false);
-    hasWindow && window.removeEventListener('hashchange', this._onpopstate, false);
+    window.removeEventListener('popstate', this._onpopstate, false);
+    window.removeEventListener('hashchange', this._onpopstate, false);
   }
 
   /**
@@ -207,7 +185,7 @@ export class Page {
       var window = this._window;
       // this may need more testing to see if all browsers
       // wait for the next tick to go back in history
-      hasHistory && window.history.back();
+      window.history.back();
       this.len--;
     } else if (path) {
       setTimeout(function() {
@@ -382,11 +360,6 @@ export class Page {
 
     path = path[0] !== '/' ? '/' + path : path;
 
-    // strip leading "/[drive letter]:" on NW.js on Windows
-    if (hasProcess && path.match(/^\/[a-zA-Z]:\//)) {
-      path = path.replace(/^\/[a-zA-Z]:\//, '/');
-    }
-
     // same page
     var orig = path;
     var pageBase = this._getBase();
@@ -397,7 +370,7 @@ export class Page {
 
     if (this._hashbang) path = path.replace('#!', '');
 
-    if (pageBase && orig === path && (!isLocation || this._window.location.protocol !== 'file:')) {
+    if (pageBase && orig === path && (this._window.location.protocol !== 'file:')) {
       return;
     }
 
@@ -411,10 +384,7 @@ export class Page {
    */
   _onpopstate = (() => {
     var loaded = false;
-    if ( ! hasWindow ) {
-      return () => {};
-    }
-    if (hasDocument && document.readyState === 'complete') {
+    if (document.readyState === 'complete') {
       loaded = true;
     } else {
       window.addEventListener('load', function() {
@@ -429,7 +399,7 @@ export class Page {
       if (e.state) {
         var path = e.state.path;
         this.replace(path, e.state);
-      } else if (isLocation) {
+      } else {
         var loc = this._window.location;
         this.show(loc.pathname + loc.search + loc.hash, undefined, undefined, false);
       }
@@ -440,7 +410,7 @@ export class Page {
    * Event button.
    */
   _which(e) {
-    e = e || (hasWindow && this._window.event);
+    e = e || this._window.event;
     return null == e.which ? e.button : e.which;
   }
 
@@ -450,9 +420,9 @@ export class Page {
    */
   _toURL(href) {
     var window = this._window;
-    if(typeof URL === 'function' && isLocation) {
+    if(typeof URL === 'function') {
       return new URL(href, window.location.toString());
-    } else if (hasDocument) {
+    } else {
       var anc = window.document.createElement('a');
       anc.href = href;
       return anc;
@@ -465,7 +435,7 @@ export class Page {
    * @api public
    */
   sameOrigin(href) {
-    if(!href || !isLocation) return false;
+    if(!href) return false;
 
     var url = this._toURL(href);
     var window = this._window;
@@ -485,7 +455,6 @@ export class Page {
    * @api private
    */
   _samePath(url) {
-    if(!isLocation) return false;
     var window = this._window;
     var loc = window.location;
     return url.pathname === loc.pathname &&
@@ -614,15 +583,15 @@ function unhandled(ctx) {
   var window = page._window;
 
   if (page._hashbang) {
-    current = isLocation && this._getBase() + window.location.hash.replace('#!', '');
+    current = this._getBase() + window.location.hash.replace('#!', '');
   } else {
-    current = isLocation && window.location.pathname + window.location.search;
+    current = window.location.pathname + window.location.search;
   }
 
   if (current === ctx.canonicalPath) return;
   page.stop();
   ctx.handled = false;
-  isLocation && (window.location.href = ctx.canonicalPath);
+  window.location.href = ctx.canonicalPath;
 }
 
 /**
@@ -673,7 +642,7 @@ export class Context {
     this.path = path.replace(re, '') || '/';
     if (hashbang) this.path = this.path.replace('#!', '') || '/';
 
-    this.title = (hasDocument && window.document.title);
+    this.title = window.document.title;
     this.state = state || {};
     this.state.path = path;
     this.querystring = ~i ? _page._decodeURLEncodedURIComponent(path.slice(i + 1)) : '';
@@ -703,10 +672,8 @@ export class Context {
     var hashbang = page._hashbang;
 
     page.len++;
-    if (hasHistory) {
-        window.history.pushState(this.state, this.title,
-          hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
-    }
+    window.history.pushState(this.state, this.title,
+      hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
   }
 
   /**
@@ -717,10 +684,8 @@ export class Context {
 
   save() {
     var page = this.page;
-    if (hasHistory) {
-        page._window.history.replaceState(this.state, this.title,
-          page._hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
-    }
+    page._window.history.replaceState(this.state, this.title,
+      page._hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
   }
 }
 
