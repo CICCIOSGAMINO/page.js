@@ -376,7 +376,7 @@ export class Page {
     // x-origin
     // note: svg links that are not relative don't call click events (and skip page.js)
     // consequently, all svg links tested inside page.js are relative and in the same origin
-    if (!svg && !this.sameOrigin(el.href)) {
+    if (!svg && !this.sameOrigin((el as HTMLAnchorElement).href)) {
       return;
     }
 
@@ -424,32 +424,15 @@ export class Page {
   };
 
   /**
-   * Convert to a URL object
-   * @api private
-   */
-  _toURL(href) {
-    var window = this._window;
-    if(typeof URL === 'function') {
-      return new URL(href, window.location.toString());
-    } else {
-      var anc = window.document.createElement('a');
-      anc.href = href;
-      return anc;
-    }
-  }
-
-  /**
    * Check if `href` is the same origin.
-   * @param {string} href
-   * @api public
    */
-  sameOrigin(href) {
-    if(!href) return false;
+  sameOrigin(href?: string): boolean {
+    if (href === undefined) {
+      return false;
+    }
 
-    var url = this._toURL(href);
-    var window = this._window;
-
-    var loc = window.location;
+    const url = new URL(href, this._window.location.toString());
+    const loc = this._window.location;
     /*
         when the port is the default http port 80, internet explorer 11
         returns an empty string for loc.port, so we need to compare loc.port

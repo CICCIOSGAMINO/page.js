@@ -739,22 +739,6 @@ var isNode = typeof window !== 'object',
     });
   });
 
-  describe('Environments without the URL constructor', function() {
-    var URLC;
-    before(function(done) {
-      URLC = window.URL;
-      window.URL = undefined;
-      beforeTests(null, done);
-    });
-
-    tests();
-
-    after(function() {
-      window.URL = URLC;
-      afterTests();
-    });
-  });
-
   var describei = jsdomSupport ? describe : describe.skip;
 
   describei('File protocol', function() {
