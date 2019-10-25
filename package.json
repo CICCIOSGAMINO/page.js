@@ -18,6 +18,7 @@
   "scripts": {
     "build": "tsc",
     "checksize": "rollup -c ; cat page-bundled.js | gzip -9 | wc -c ; rm page-bundled.js",
+    "lint": "eslint src/*.ts",
     "format": "prettier src/*.ts src/**/*.ts --write",
     "engine-deps": "install-engine-dependencies",
     "test": "jshint index.js test/tests.js && mocha test/tests.js",
@@ -29,9 +30,13 @@
   "devDependencies": {
     "@types/chai": "^4.2.4",
     "@types/mocha": "^5.2.7",
+    "@typescript-eslint/eslint-plugin": "^2.5.0",
+    "@typescript-eslint/parser": "^2.5.0",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "es-dev-server": "^1.18.5",
+    "eslint": "^6.6.0",
+    "eslint-config-prettier": "^6.4.0",
     "express": "^4.10.2",
     "jade": "^1.7.0",
     "jscoverage": "^0.5.9",
