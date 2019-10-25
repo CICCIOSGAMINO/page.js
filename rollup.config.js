@@ -1,20 +1,23 @@
-import commonjs from 'rollup-plugin-commonjs';
-import nodeResolve from 'rollup-plugin-node-resolve';
+import filesize from 'rollup-plugin-filesize';
+import {terser} from 'rollup-plugin-terser';
 
 export default {
-  input: 'index.js',
+  input: 'page.js',
   output: {
-    file: 'page.js',
-    format: 'umd',
-    name: 'page'
+    file: 'page-bundled.js',
+    format: 'esm',
   },
   plugins: [
-    nodeResolve({
-      jsnext: true,
-      main: true
+    terser({
+      warnings: true,
+      mangle: {
+        properties: {
+          regex: /^__/,
+        },
+      },
     }),
-    commonjs({
-      include: ['node_modules/**', '**']
-    })
-  ]
+    filesize({
+      showBrotliSize: true,
+    }),
+  ],
 };
