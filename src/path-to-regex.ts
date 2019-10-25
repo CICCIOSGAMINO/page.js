@@ -1,29 +1,31 @@
-
 /**
  * Expose `pathToRegexp`.
  */
 export default pathToRegexp;
 
-pathToRegexp.parse = parse
-pathToRegexp.compile = compile
-pathToRegexp.tokensToFunction = tokensToFunction
-pathToRegexp.tokensToRegExp = tokensToRegExp
+pathToRegexp.parse = parse;
+pathToRegexp.compile = compile;
+pathToRegexp.tokensToFunction = tokensToFunction;
+pathToRegexp.tokensToRegExp = tokensToRegExp;
 
 /**
  * The main path matching regexp utility.
  */
-const PATH_REGEXP = new RegExp([
-  // Match escaped characters that would otherwise appear in future matches.
-  // This allows the user to escape special characters that won't transform.
-  '(\\\\.)',
-  // Match Express-style parameters and un-named parameters with a prefix
-  // and optional suffixes. Matches appear as:
-  //
-  // "/:test(\\d+)?" => ["/", "test", "\d+", undefined, "?", undefined]
-  // "/route(\\d+)"  => [undefined, undefined, undefined, "\d+", undefined, undefined]
-  // "/*"            => ["/", undefined, undefined, undefined, undefined, "*"]
-  '([\\/.])?(?:(?:\\:(\\w+)(?:\\(((?:\\\\.|[^()])+)\\))?|\\(((?:\\\\.|[^()])+)\\))([+*?])?|(\\*))'
-].join('|'), 'g')
+const PATH_REGEXP = new RegExp(
+  [
+    // Match escaped characters that would otherwise appear in future matches.
+    // This allows the user to escape special characters that won't transform.
+    '(\\\\.)',
+    // Match Express-style parameters and un-named parameters with a prefix
+    // and optional suffixes. Matches appear as:
+    //
+    // "/:test(\\d+)?" => ["/", "test", "\d+", undefined, "?", undefined]
+    // "/route(\\d+)"  => [undefined, undefined, undefined, "\d+", undefined, undefined]
+    // "/*"            => ["/", undefined, undefined, undefined, undefined, "*"]
+    '([\\/.])?(?:(?:\\:(\\w+)(?:\\(((?:\\\\.|[^()])+)\\))?|\\(((?:\\\\.|[^()])+)\\))([+*?])?|(\\*))',
+  ].join('|'),
+  'g'
+);
 
 interface Token {
   name: string | number;
@@ -37,8 +39,8 @@ interface Token {
 /**
  * Parse a string for the raw tokens.
  */
-function parse (str: string): Array<string|Token> {
-  const tokens: Array<string|Token> = [];
+function parse(str: string): Array<string | Token> {
+  const tokens: Array<string | Token> = [];
   let key = 0;
   let index = 0;
   let path = '';
@@ -48,19 +50,19 @@ function parse (str: string): Array<string|Token> {
     const m = res[0];
     const escaped = res[1];
     const offset = res.index;
-    path += str.slice(index, offset)
-    index = offset + m.length
+    path += str.slice(index, offset);
+    index = offset + m.length;
 
     // Ignore already escaped sequences.
     if (escaped) {
-      path += escaped[1]
-      continue
+      path += escaped[1];
+      continue;
     }
 
     // Push the current path onto the tokens.
     if (path) {
-      tokens.push(path)
-      path = ''
+      tokens.push(path);
+      path = '';
     }
 
     const prefix = res[2];
@@ -73,7 +75,8 @@ function parse (str: string): Array<string|Token> {
     const repeat = suffix === '+' || suffix === '*';
     const optional = suffix === '?' || suffix === '*';
     const delimiter = prefix || '/';
-    const pattern = capture || group || (asterisk ? '.*' : '[^' + delimiter + ']+?');
+    const pattern =
+      capture || group || (asterisk ? '.*' : '[^' + delimiter + ']+?');
 
     tokens.push({
       name: name || key++,
@@ -81,34 +84,34 @@ function parse (str: string): Array<string|Token> {
       delimiter: delimiter,
       optional: optional,
       repeat: repeat,
-      pattern: escapeGroup(pattern)
-    })
+      pattern: escapeGroup(pattern),
+    });
   }
 
   // Match any characters still remaining.
   if (index < str.length) {
-    path += str.substr(index)
+    path += str.substr(index);
   }
 
   // If the path exists, push it onto the end.
   if (path) {
-    tokens.push(path)
+    tokens.push(path);
   }
 
-  return tokens
+  return tokens;
 }
 
 /**
  * Compile a string to a template function for the path.
  */
-function compile (str: string) {
-  return tokensToFunction(parse(str))
+function compile(str: string) {
+  return tokensToFunction(parse(str));
 }
 
 /**
  * Expose a method for transforming tokens into the path function.
  */
-function tokensToFunction (tokens: Array<string|Token>) {
+function tokensToFunction(tokens: Array<string | Token>) {
   // Compile all the tokens into regexps.
   const matches = new Array(tokens.length);
 
@@ -120,7 +123,7 @@ function tokensToFunction (tokens: Array<string|Token>) {
     }
   }
 
-  return function (obj: {}) {
+  return function(obj: {}) {
     let path = '';
     const data: any = obj || {};
 
@@ -145,14 +148,22 @@ function tokensToFunction (tokens: Array<string|Token>) {
 
       if (Array.isArray(value)) {
         if (!token.repeat) {
-          throw new TypeError('Expected "' + token.name + '" to not repeat, but received "' + value + '"');
+          throw new TypeError(
+            'Expected "' +
+              token.name +
+              '" to not repeat, but received "' +
+              value +
+              '"'
+          );
         }
 
         if (value.length === 0) {
           if (token.optional) {
             continue;
           } else {
-            throw new TypeError('Expected "' + token.name + '" to not be empty');
+            throw new TypeError(
+              'Expected "' + token.name + '" to not be empty'
+            );
           }
         }
 
@@ -160,10 +171,18 @@ function tokensToFunction (tokens: Array<string|Token>) {
           segment = encodeURIComponent(value[j]);
 
           if (!matches[i].test(segment)) {
-            throw new TypeError('Expected all "' + token.name + '" to match "' + token.pattern + '", but received "' + segment + '"');
+            throw new TypeError(
+              'Expected all "' +
+                token.name +
+                '" to match "' +
+                token.pattern +
+                '", but received "' +
+                segment +
+                '"'
+            );
           }
 
-          path += (j === 0 ? token.prefix : token.delimiter) + segment
+          path += (j === 0 ? token.prefix : token.delimiter) + segment;
         }
 
         continue;
@@ -172,20 +191,29 @@ function tokensToFunction (tokens: Array<string|Token>) {
       segment = encodeURIComponent(value as string);
 
       if (!matches[i].test(segment)) {
-        throw new TypeError('Expected "' + token.name + '" to match "' + token.pattern + '", but received "' + segment + '"');
+        throw new TypeError(
+          'Expected "' +
+            token.name +
+            '" to match "' +
+            token.pattern +
+            '", but received "' +
+            segment +
+            '"'
+        );
       }
 
       path += token.prefix + segment;
     }
 
     return path;
-  }
+  };
 }
 
 /**
  * Escape a regular expression string.
  */
-const escapeString = (str: string) => str.replace(/([.+*?=^!:${}()[\]|\/])/g, '\\$1');
+const escapeString = (str: string) =>
+  str.replace(/([.+*?=^!:${}()[\]|\/])/g, '\\$1');
 
 /**
  * Escape the capturing group by escaping special characters and meaning.
@@ -195,7 +223,7 @@ const escapeGroup = (group: string) => group.replace(/([=!:$\/()])/g, '\\$1');
 /**
  * Attach the keys as a property of the regexp.
  */
-function attachKeys (re: RegExp, keys: Array<string|Token>) {
+function attachKeys(re: RegExp, keys: Array<string | Token>) {
   (re as any).keys = keys;
   return re;
 }
@@ -212,12 +240,12 @@ interface Options {
  * @param  {Object} options
  * @return {String}
  */
-const flags = (options: Options) => options.sensitive ? '' : 'i';
+const flags = (options: Options) => (options.sensitive ? '' : 'i');
 
 /**
  * Pull out keys from a regexp.
  */
-function regexpToRegexp (path: RegExp, keys: Array<string|Token>) {
+function regexpToRegexp(path: RegExp, keys: Array<string | Token>) {
   // Use a negative lookahead to match only capturing groups.
   const groups = path.source.match(/\((?!\?)/g);
 
@@ -240,14 +268,21 @@ function regexpToRegexp (path: RegExp, keys: Array<string|Token>) {
 /**
  * Transform an array into a regexp.
  */
-function arrayToRegexp(path: Array<string>, keys: Array<string|Token>, options: Options) {
+function arrayToRegexp(
+  path: Array<string>,
+  keys: Array<string | Token>,
+  options: Options
+) {
   const parts = [];
 
   for (const segment of path) {
     parts.push(pathToRegexp(segment, keys, options).source);
   }
 
-  const regexp: RegExp = new RegExp('(?:' + parts.join('|') + ')', flags(options));
+  const regexp: RegExp = new RegExp(
+    '(?:' + parts.join('|') + ')',
+    flags(options)
+  );
 
   return attachKeys(regexp, keys);
 }
@@ -255,7 +290,11 @@ function arrayToRegexp(path: Array<string>, keys: Array<string|Token>, options: 
 /**
  * Create a path regexp from string input.
  */
-function stringToRegexp(path: string, keys: Array<string|Token>, options?: Options) {
+function stringToRegexp(
+  path: string,
+  keys: Array<string | Token>,
+  options?: Options
+) {
   const tokens = parse(path);
   const re = tokensToRegExp(tokens, options);
 
@@ -272,7 +311,7 @@ function stringToRegexp(path: string, keys: Array<string|Token>, options?: Optio
 /**
  * Expose a function for taking tokens and returning a RegExp.
  */
-function tokensToRegExp (tokens: Array<string|Token>, options: Options = {}) {
+function tokensToRegExp(tokens: Array<string | Token>, options: Options = {}) {
   const strict = options.strict;
   const end = options.end !== false;
   const lastToken = tokens[tokens.length - 1];
@@ -310,7 +349,7 @@ function tokensToRegExp (tokens: Array<string|Token>, options: Options = {}) {
   // is valid at the end of a path match, not in the middle. This is important
   // in non-ending mode, where "/test/" shouldn't match "/test//route".
   if (!strict) {
-    route = (endsWithSlash ? route.slice(0, -2) : route) + '(?:\\/(?=$))?'
+    route = (endsWithSlash ? route.slice(0, -2) : route) + '(?:\\/(?=$))?';
   }
 
   if (end) {
@@ -331,7 +370,11 @@ function tokensToRegExp (tokens: Array<string|Token>, options: Options = {}) {
  * placeholder key descriptions. For example, using `/user/:id`, `keys` will
  * contain `[{ name: 'id', delimiter: '/', optional: false, repeat: false }]`.
  */
-function pathToRegexp (path: string|RegExp|Array<string>, keys: Array<string|Token>, options?: Options) {
+function pathToRegexp(
+  path: string | RegExp | Array<string>,
+  keys: Array<string | Token>,
+  options?: Options
+) {
   keys = keys || [];
 
   if (!Array.isArray(keys)) {
@@ -346,8 +389,8 @@ function pathToRegexp (path: string|RegExp|Array<string>, keys: Array<string|Tok
   }
 
   if (Array.isArray(path)) {
-    return arrayToRegexp(path, keys, options)
+    return arrayToRegexp(path, keys, options);
   }
 
-  return stringToRegexp(path, keys, options)
+  return stringToRegexp(path, keys, options);
 }

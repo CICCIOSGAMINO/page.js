@@ -1,4 +1,4 @@
-import globalPage, { StartOptions, Callback, Context, Page } from '../page.js';
+import globalPage, {StartOptions, Callback, Context, Page} from '../page.js';
 
 let page = globalPage;
 const expect = chai.expect;
@@ -8,14 +8,14 @@ let base = '';
 let setbase = true;
 let hashbang = false;
 let decodeURLComponents = true;
-let frame: HTMLIFrameElement|undefined;
+let frame: HTMLIFrameElement | undefined;
 const $ = (sel: string) => frame!.contentWindow!.document.querySelector(sel)!;
 
 const fireEvent = (node: Node, eventName: string) => {
   const MouseEvent = (testWindow() as any).MouseEvent;
   const event = new MouseEvent(eventName, {
     bubbles: true,
-    button: 1
+    button: 1,
   });
   node.dispatchEvent(event);
 };
@@ -28,7 +28,10 @@ type BeforeTestsOptions = StartOptions & {
   decodeURLComponents?: boolean;
 };
 
-const beforeTests = function(options: BeforeTestsOptions = {}, done: () => void) {
+const beforeTests = function(
+  options: BeforeTestsOptions = {},
+  done: () => void
+) {
   page = new Page();
 
   page.route('/', function(ctx) {
@@ -36,19 +39,19 @@ const beforeTests = function(options: BeforeTestsOptions = {}, done: () => void)
     baseRoute(ctx);
   });
 
-  function onFrameLoad(){
-    if(setbase) {
+  function onFrameLoad() {
+    if (setbase) {
       if (options.base) {
         page.base = options.base;
       }
       const baseTag = testWindow().document.createElement('base');
       testWindow().document.head.appendChild(baseTag);
 
-      baseTag.setAttribute('href', (base ? base + '/' : '/'));
+      baseTag.setAttribute('href', base ? base + '/' : '/');
     }
 
     options.window = testWindow();
-    if(options.strict != null) {
+    if (options.strict != null) {
       page.strict = options.strict;
     }
     page.start(options);
@@ -69,15 +72,15 @@ const replaceable = (route: string) => {
 
   const obj = {
     callback: Function.prototype,
-    replace: function(cb: Callback){
+    replace: function(cb: Callback) {
       obj.callback = cb;
     },
-    once: function(cb: Callback){
-      obj.replace(function(ctx){
+    once: function(cb: Callback) {
+      obj.replace(function(ctx) {
         obj.callback = Function.prototype;
         cb(ctx, () => undefined);
       });
-    }
+    },
   };
 
   page.route(route, realCallback);
@@ -92,15 +95,19 @@ const tests = function() {
     });
 
     it('should invoke the matching async callbacks', function(done) {
-      page.route('/async', (_ctx, next) => {
-        setTimeout(() => {
-          next();
-        }, 10);
-      }, () => {
-        setTimeout(function() {
-          done();
-        }, 10);
-      });
+      page.route(
+        '/async',
+        (_ctx, next) => {
+          setTimeout(() => {
+            next();
+          }, 10);
+        },
+        () => {
+          setTimeout(function() {
+            done();
+          }, 10);
+        }
+      );
       page.show('/async');
     });
   });
@@ -153,16 +160,20 @@ const tests = function() {
         visited = true;
       });
 
-      page.exit('/async-exit', (_ctx, next) => {
-        setTimeout(() => {
-          next();
-        }, 10);
-      }, () => {
-        setTimeout(() => {
-          expect(visited).to.equal(true);
-          done();
-        }, 10);
-      });
+      page.exit(
+        '/async-exit',
+        (_ctx, next) => {
+          setTimeout(() => {
+            next();
+          }, 10);
+        },
+        () => {
+          setTimeout(() => {
+            expect(visited).to.equal(true);
+            done();
+          }, 10);
+        }
+      );
 
       page.show('/async-exit');
       page.show('/');
@@ -210,10 +221,10 @@ const tests = function() {
 
       page.exit(function(context) {
         const path = context.path;
-        setTimeout( function() {
+        setTimeout(function() {
           expect(path).to.equal('/');
-          page.replace( '/', undefined, false, false);
-          if ( count === 2 ) {
+          page.replace('/', undefined, false, false);
+          if (count === 2) {
             done();
             return;
           }
@@ -225,11 +236,10 @@ const tests = function() {
 
       page.show('/bootstrap');
 
-      setTimeout( function() {
+      setTimeout(function() {
         page.show('/bootstrap');
-      }, 0 );
+      }, 0);
     });
-
 
     after(function() {
       // remove exit handler that was added
@@ -248,7 +258,7 @@ const tests = function() {
     });
 
     it('should move back to history', function(done) {
-      first.once(function(){
+      first.once(function() {
         let path = hashbang
           ? testWindow().location.hash.replace('#!', '')
           : testWindow().location.pathname;
@@ -258,7 +268,6 @@ const tests = function() {
       });
 
       page.back('/first');
-
     });
 
     it('should decrement page.len on back()', function() {
@@ -268,8 +277,8 @@ const tests = function() {
       expect(page.len).to.be.equal(lenAtFirst);
     });
 
-    it('calling back() when there is nothing in the history should go to the given path', function(done){
-      page.route('/fourth', function(){
+    it('calling back() when there is nothing in the history should go to the given path', function(done) {
+      page.route('/fourth', function() {
         expect(page.len).to.be.equal(0);
         done();
       });
@@ -277,8 +286,8 @@ const tests = function() {
       page.back('/fourth');
     });
 
-    it('calling back with nothing in the history and no path should go to the base', function(done){
-      baseRoute = function(){
+    it('calling back with nothing in the history and no path should go to the base', function(done) {
+      baseRoute = function() {
         expect(page.len).to.be.equal(0);
         baseRoute = Function.prototype;
         done();
@@ -323,7 +332,9 @@ const tests = function() {
   describe('ctx.pathname', function() {
     it('should default to ctx.path', function(done) {
       page.route('/pathname-default', function(ctx) {
-        expect(ctx.pathname).to.equal(base + (base && hashbang ? '#!' : '') + '/pathname-default');
+        expect(ctx.pathname).to.equal(
+          base + (base && hashbang ? '#!' : '') + '/pathname-default'
+        );
         done();
       });
 
@@ -332,7 +343,9 @@ const tests = function() {
 
     it('should omit the query string', function(done) {
       page.route('/pathname', function(ctx) {
-        expect(ctx.pathname).to.equal(base + (base && hashbang ? '#!' : '') + '/pathname');
+        expect(ctx.pathname).to.equal(
+          base + (base && hashbang ? '#!' : '') + '/pathname'
+        );
         done();
       });
 
@@ -341,8 +354,13 @@ const tests = function() {
 
     it('should accommodate URL encoding', function(done) {
       page.route('/long path with whitespace', function(ctx) {
-        expect(ctx.pathname).to.equal(base + (base && hashbang ? '#!' : '') +
-          (decodeURLComponents ? '/long path with whitespace' : '/long%20path%20with%20whitespace'));
+        expect(ctx.pathname).to.equal(
+          base +
+            (base && hashbang ? '#!' : '') +
+            (decodeURLComponents
+              ? '/long path with whitespace'
+              : '/long%20path%20with%20whitespace')
+        );
         done();
       });
 
@@ -368,7 +386,7 @@ const tests = function() {
       });
       page.show('/ctxparams/test/');
     });
-    
+
     it('should handle optional first param', function(done) {
       page.route(/^\/ctxparams\/(option1|option2)?$/, function(ctx) {
         expect(ctx.params[0]).to.be.undefined;
@@ -437,12 +455,12 @@ const tests = function() {
       fireEvent($('.whoop'), 'click');
     });
 
-    it('should not fire when navigating to a different domain', function(done){
+    it('should not fire when navigating to a different domain', function(done) {
       page.route('/diff-domain', (_ctx) => {
         expect(true).to.equal(false);
       });
 
-      testWindow().document.addEventListener('click', function onDocClick(ev){
+      testWindow().document.addEventListener('click', function onDocClick(ev) {
         ev.preventDefault();
         testWindow().document.removeEventListener('click', onDocClick);
         done();
@@ -520,8 +538,8 @@ const tests = function() {
       page.show('/blog/post/something');
     });
 
-    it('should not include hash in ctx.pathname', function(done){
-      page.route('/contact', function(ctx){
+    it('should not include hash in ctx.pathname', function(done) {
+      page.route('/contact', function(ctx) {
         expect(ctx.pathname).to.equal('/contact');
         done();
       });
@@ -531,7 +549,6 @@ const tests = function() {
 
     describe('when next() is invoked', function() {
       it('should invoke subsequent matching middleware', function(done) {
-
         let visistedFirst = false;
         page.route('/forum/*', (_ctx, next) => {
           visistedFirst = true;
@@ -572,18 +589,17 @@ const afterTests = function() {
 };
 
 describe('Html5 history navigation', function() {
-
   before(function(done) {
     beforeTests(undefined, done);
   });
 
   tests();
 
-  it('Should dispatch when going to a hash on same path', function(done){
+  it('Should dispatch when going to a hash on same path', function(done) {
     let cnt = 0;
-    page.route('/query', function(){
+    page.route('/query', function() {
       cnt++;
-      if(cnt === 2) {
+      if (cnt === 2) {
         done();
       }
     });
@@ -595,7 +611,6 @@ describe('Html5 history navigation', function() {
   after(function() {
     afterTests();
   });
-
 });
 
 describe('Configuration', function() {
@@ -604,11 +619,11 @@ describe('Configuration', function() {
   });
 
   it('Can disable popstate', function() {
-    page.configure({ popstate: false });
+    page.configure({popstate: false});
   });
 
   it('Can disable click handler', function() {
-    page.configure({ click: false });
+    page.configure({click: false});
   });
 
   after(function() {
@@ -617,39 +632,42 @@ describe('Configuration', function() {
 });
 
 describe('Hashbang option enabled', function() {
-
   before(function(done) {
     hashbang = true;
-    beforeTests({
-      hashbang: hashbang
-    }, done);
+    beforeTests(
+      {
+        hashbang: hashbang,
+      },
+      done
+    );
   });
 
   tests();
 
-  it('Using hashbang, url\'s pathname not included in path', function(done){
+  it("Using hashbang, url's pathname not included in path", function(done) {
     page.stop();
-    baseRoute = function(ctx: Context){
+    baseRoute = function(ctx: Context) {
       expect(ctx.path).to.equal('/');
       done();
     };
-    page.start({ hashbang: true, window: testWindow() });
+    page.start({hashbang: true, window: testWindow()});
   });
 
   after(function() {
     hashbang = false;
     afterTests();
   });
-
 });
 
 describe('Different Base', function() {
-
   before(function(done) {
     base = '/newBase';
-    beforeTests({
-      base: '/newBase'
-    }, done);
+    beforeTests(
+      {
+        base: '/newBase',
+      },
+      done
+    );
   });
 
   tests();
@@ -657,15 +675,17 @@ describe('Different Base', function() {
   after(function() {
     afterTests();
   });
-
 });
 
 describe('URL path component decoding disabled', function() {
   before(function(done) {
     decodeURLComponents = false;
-    beforeTests({
-      decodeURLComponents: decodeURLComponents,
-    }, done);
+    beforeTests(
+      {
+        decodeURLComponents: decodeURLComponents,
+      },
+      done
+    );
   });
 
   tests();
@@ -677,9 +697,12 @@ describe('URL path component decoding disabled', function() {
 
 describe('Strict path matching enabled', function() {
   before(function(done) {
-    beforeTests({
-      strict: true
-    }, done);
+    beforeTests(
+      {
+        strict: true,
+      },
+      done
+    );
   });
 
   tests();

@@ -38,7 +38,9 @@ export interface StartOptions {
 
 let windowLoaded = document.readyState === 'complete';
 if (!windowLoaded) {
-  window.addEventListener('load', () => setTimeout(() => windowLoaded = true, 0));
+  window.addEventListener('load', () =>
+    setTimeout(() => (windowLoaded = true), 0)
+  );
 }
 
 /**
@@ -74,7 +76,7 @@ export class Page {
     this._hashbang = !!opts.hashbang;
 
     const _window = this._window;
-    if(this._popstate) {
+    if (this._popstate) {
       _window.addEventListener('popstate', this._onpopstate, false);
     } else {
       _window.removeEventListener('popstate', this._onpopstate, false);
@@ -83,7 +85,11 @@ export class Page {
     if (this._click) {
       _window.document.addEventListener(clickEvent, this.clickHandler, false);
     } else {
-      _window.document.removeEventListener(clickEvent, this.clickHandler, false);
+      _window.document.removeEventListener(
+        clickEvent,
+        this.clickHandler,
+        false
+      );
     }
 
     _window.removeEventListener('hashchange', this._onpopstate, false);
@@ -148,7 +154,7 @@ export class Page {
     const window = this._window;
     const loc = window.location;
 
-    if(this._hashbang && ~loc.hash.indexOf('#!')) {
+    if (this._hashbang && ~loc.hash.indexOf('#!')) {
       url = loc.hash.substr(2) + loc.search;
     } else if (this._hashbang) {
       url = loc.search + loc.hash;
@@ -169,15 +175,19 @@ export class Page {
     this._running = false;
 
     const window = this._window;
-    this._click && window.document.removeEventListener(clickEvent, this.clickHandler, false);
+    this._click &&
+      window.document.removeEventListener(clickEvent, this.clickHandler, false);
     window.removeEventListener('popstate', this._onpopstate, false);
     window.removeEventListener('hashchange', this._onpopstate, false);
   }
 
   route(callback: Callback): void;
-  route(path: string|RegExp, ...callbacks: Callback[]): void;
-  route(pathOrCallback: string|RegExp|Callback, ...callbacks: Callback[]): void {
-    const path = (typeof pathOrCallback === 'function') ? '*' : pathOrCallback;
+  route(path: string | RegExp, ...callbacks: Callback[]): void;
+  route(
+    pathOrCallback: string | RegExp | Callback,
+    ...callbacks: Callback[]
+  ): void {
+    const path = typeof pathOrCallback === 'function' ? '*' : pathOrCallback;
     if (typeof pathOrCallback === 'function') {
       callbacks.push(pathOrCallback);
     }
@@ -190,7 +200,12 @@ export class Page {
   /**
    * Show `path` with optional `state` object.
    */
-  show(path: string, state?: State, dispatch?: boolean, push?: boolean): Context {
+  show(
+    path: string,
+    state?: State,
+    dispatch?: boolean,
+    push?: boolean
+  ): Context {
     const context = new Context(path, state, this);
     const prev = this.prevContext;
 
@@ -274,7 +289,7 @@ export class Page {
         return nextEnter();
       }
       fn(prev!, nextExit);
-    }
+    };
 
     const nextEnter = () => {
       const fn = this.callbacks[i++];
@@ -287,7 +302,7 @@ export class Page {
         return this.unhandled(context);
       }
       fn(context, nextEnter);
-    }
+    };
 
     if (prev) {
       nextExit();
@@ -305,7 +320,7 @@ export class Page {
   exit(path: string, ...exits: Callback[]): void;
   exit(fn: Callback): void;
   exit(pathOrCallback: string | Callback, ...exits: Callback[]): void {
-    const path = (typeof pathOrCallback === 'function') ? '*' : pathOrCallback;
+    const path = typeof pathOrCallback === 'function' ? '*' : pathOrCallback;
     if (typeof pathOrCallback === 'function') {
       exits.push(pathOrCallback);
     }
@@ -320,7 +335,13 @@ export class Page {
    * Handle "click" events.
    */
   clickHandler = (e: MouseEvent | TouchEvent) => {
-    if (e.defaultPrevented || (e as MouseEvent).button !== 1 || e.metaKey || e.ctrlKey || e.shiftKey) {
+    if (
+      e.defaultPrevented ||
+      (e as MouseEvent).button !== 1 ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey
+    ) {
       return;
     }
 
@@ -347,15 +368,17 @@ export class Page {
       el = el.parentNode as Element;
     }
     const isAnchor = (e: Element): e is HTMLAnchorElement | SVGAElement =>
-        e !== undefined && e.nodeName.toUpperCase() === 'A';
-    
+      e !== undefined && e.nodeName.toUpperCase() === 'A';
+
     if (!isAnchor(el)) {
       return;
     }
 
     // check if link is inside an svg
     // in this case, both href and target are always inside an object
-    const svg = (typeof el.href === 'object') && el.href.constructor.name === 'SVGAnimatedString';
+    const svg =
+      typeof el.href === 'object' &&
+      el.href.constructor.name === 'SVGAnimatedString';
 
     // Ignore if tag has
     // 1. "download" attribute
@@ -366,7 +389,11 @@ export class Page {
 
     // ensure non-hash for the same path
     const link = el.getAttribute('href');
-    if (!this._hashbang && this._samePath(el) && ((el as HTMLAnchorElement).hash || '#' === link)) {
+    if (
+      !this._hashbang &&
+      this._samePath(el) &&
+      ((el as HTMLAnchorElement).hash || '#' === link)
+    ) {
       return;
     }
 
@@ -391,7 +418,11 @@ export class Page {
     // rebuild path
     // There aren't .pathname and .search properties in svg links, so we use href
     // Also, svg href is an object and its desired value is in .baseVal property
-    let path = svg ? (el as SVGAElement).href.baseVal : ((el as HTMLAnchorElement).pathname + (el as HTMLAnchorElement).search + ((el as HTMLAnchorElement).hash || ''));
+    let path = svg
+      ? (el as SVGAElement).href.baseVal
+      : (el as HTMLAnchorElement).pathname +
+        (el as HTMLAnchorElement).search +
+        ((el as HTMLAnchorElement).hash || '');
 
     path = path[0] !== '/' ? '/' + path : path;
 
@@ -407,13 +438,17 @@ export class Page {
       path = path.replace('#!', '');
     }
 
-    if (pageBase && orig === path && (this._window.location.protocol !== 'file:')) {
+    if (
+      pageBase &&
+      orig === path &&
+      this._window.location.protocol !== 'file:'
+    ) {
       return;
     }
 
     e.preventDefault();
     this.show(orig);
-  }
+  };
 
   /**
    * Handle "populate" events.
@@ -427,7 +462,12 @@ export class Page {
       this.replace(path, (e as PopStateEvent).state);
     } else {
       const loc = this._window.location;
-      this.show(loc.pathname + loc.search + loc.hash, undefined, undefined, false);
+      this.show(
+        loc.pathname + loc.search + loc.hash,
+        undefined,
+        undefined,
+        false
+      );
     }
   };
 
@@ -446,14 +486,19 @@ export class Page {
         returns an empty string for loc.port, so we need to compare loc.port
         with an empty string if url.port is the default port 80.
     */
-    return loc.protocol === url.protocol &&
+    return (
+      loc.protocol === url.protocol &&
       loc.hostname === url.hostname &&
-      (loc.port === url.port || loc.port === '' && url.port === '80');
+      (loc.port === url.port || (loc.port === '' && url.port === '80'))
+    );
   }
 
   private _samePath(url: HTMLAnchorElement | SVGAElement) {
     const loc = this._window.location;
-    return (url as any).pathname === loc.pathname && (url as any).search === loc.search;
+    return (
+      (url as any).pathname === loc.pathname &&
+      (url as any).search === loc.search
+    );
   }
 
   /**
@@ -464,8 +509,12 @@ export class Page {
    * @param val - URL component to decode
    */
   _decodeURLEncodedURIComponent(val: string) {
-    if (typeof val !== 'string') { return val; }
-    return this._decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
+    if (typeof val !== 'string') {
+      return val;
+    }
+    return this._decodeURLComponents
+      ? decodeURIComponent(val.replace(/\+/g, ' '))
+      : val;
   }
 
   /**
@@ -499,7 +548,8 @@ export class Page {
  * Escapes RegExp characters in the given string.
  * TODO: import from path-to-regex
  */
-const escapeRegExp = (s: string) => s.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
+const escapeRegExp = (s: string) =>
+  s.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
 
 export interface State {
   path?: string;
@@ -510,7 +560,6 @@ export interface State {
  * with the given `path` and optional initial `state`.
  */
 export class Context {
-
   init?: boolean;
   handled?: boolean;
   page: Page;
@@ -544,8 +593,12 @@ export class Context {
     this.title = window.document.title;
     this.state = state || {};
     this.state.path = path;
-    this.querystring = ~i ? page._decodeURLEncodedURIComponent(path.slice(i + 1)) : '';
-    this.pathname = page._decodeURLEncodedURIComponent(~i ? path.slice(0, i) : path);
+    this.querystring = ~i
+      ? page._decodeURLEncodedURIComponent(path.slice(i + 1))
+      : '';
+    this.pathname = page._decodeURLEncodedURIComponent(
+      ~i ? path.slice(0, i) : path
+    );
     this.params = {};
 
     // fragment
@@ -573,8 +626,11 @@ export class Context {
     const hashbang = page._hashbang;
 
     page.len++;
-    window.history.pushState(this.state, this.title,
-      hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
+    window.history.pushState(
+      this.state,
+      this.title,
+      hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath
+    );
   }
 
   /**
@@ -585,8 +641,13 @@ export class Context {
 
   save() {
     const page = this.page;
-    page._window.history.replaceState(this.state, this.title,
-      page._hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
+    page._window.history.replaceState(
+      this.state,
+      this.title,
+      page._hashbang && this.path !== '/'
+        ? '#!' + this.path
+        : this.canonicalPath
+    );
   }
 }
 
@@ -611,20 +672,23 @@ export interface RouteOptions {
  *   - `strict`       enable strict matching for trailing slashes
  */
 class Route {
-
   page: Page;
-  path: string|RegExp;
+  path: string | RegExp;
   method: 'GET';
   regexp: RegExp;
   keys: Array<{name: string}>;
 
-  constructor(path: string|RegExp, options?: RouteOptions, page: Page = globalPage) {
+  constructor(
+    path: string | RegExp,
+    options?: RouteOptions,
+    page: Page = globalPage
+  ) {
     this.page = page || globalPage;
     const opts = options || {};
     opts.strict = opts.strict || page._strict;
-    this.path = (path === '*') ? '(.*)' : path;
+    this.path = path === '*' ? '(.*)' : path;
     this.method = 'GET';
-    this.regexp = pathtoRegexp(this.path, this.keys = [], opts);
+    this.regexp = pathtoRegexp(this.path, (this.keys = []), opts);
   }
 
   /**
@@ -658,7 +722,7 @@ class Route {
     for (let i = 1; i < m.length; ++i) {
       const key = keys[i - 1];
       const val = this.page._decodeURLEncodedURIComponent(m[i]);
-      if (val !== undefined || !(params.hasOwnProperty(key.name))) {
+      if (val !== undefined || !params.hasOwnProperty(key.name)) {
         params[key.name] = val;
       }
     }
