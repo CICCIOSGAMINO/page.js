@@ -27,11 +27,11 @@ const PATH_REGEXP = new RegExp([
 
 interface Token {
   name: string | number;
-  prefix: string;
-  delimiter: string;
+  prefix?: string;
+  delimiter?: string;
   optional: boolean;
   repeat: boolean;
-  pattern: any;
+  pattern?: any;
 }
 
 /**
@@ -225,11 +225,11 @@ function regexpToRegexp (path: RegExp, keys: Array<string|Token>) {
     for (let i = 0; i < groups.length; i++) {
       keys.push({
         name: i,
-        prefix: null,
-        delimiter: null,
+        prefix: undefined,
+        delimiter: undefined,
         optional: false,
         repeat: false,
-        pattern: null
+        pattern: undefined,
       });
     }
   }
@@ -240,7 +240,7 @@ function regexpToRegexp (path: RegExp, keys: Array<string|Token>) {
 /**
  * Transform an array into a regexp.
  */
-function arrayToRegexp(path: Array<string>, keys: Array<string|Token>, options?: Options) {
+function arrayToRegexp(path: Array<string>, keys: Array<string|Token>, options: Options) {
   const parts = [];
 
   for (const segment of path) {
@@ -284,7 +284,7 @@ function tokensToRegExp (tokens: Array<string|Token>, options: Options = {}) {
     if (typeof token === 'string') {
       route += escapeString(token);
     } else {
-      const prefix = escapeString(token.prefix);
+      const prefix = escapeString(token.prefix!);
       let capture = token.pattern;
 
       if (token.repeat) {

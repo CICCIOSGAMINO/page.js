@@ -93,7 +93,7 @@ export class Page {
    * Get or set basepath to `path`.
    */
   base(path?: string) {
-    if (0 === arguments.length) {
+    if (path === undefined) {
       return this._base;
     }
     this._base = path;
@@ -121,7 +121,7 @@ export class Page {
    * Get or set strict path matching to `enable`
    */
   strict(enable?: boolean) {
-    if (0 === arguments.length) return this._strict;
+    if (enable === undefined) return this._strict;
     this._strict = enable;
   }
 
@@ -152,7 +152,7 @@ export class Page {
       url = loc.pathname + loc.search + loc.hash;
     }
 
-    this.replace(url, null, true, opts.dispatch);
+    this.replace(url, undefined, true, opts.dispatch);
   }
 
   /**
@@ -177,7 +177,7 @@ export class Page {
     if (typeof pathOrCallback === 'function') {
       callbacks.push(pathOrCallback);
     }
-    const route = new Route(path, null, this);
+    const route = new Route(path, undefined, this);
     for (const callback of callbacks) {
       this.callbacks.push(route.middleware(callback));
     }
@@ -186,7 +186,7 @@ export class Page {
   /**
    * Show `path` with optional `state` object.
    */
-  show(path: string, state?: unknown, dispatch?: boolean, push?: boolean): Context {
+  show(path: string, state?: State, dispatch?: boolean, push?: boolean): Context {
     const context = new Context(path, state, this);
     const prev = this.prevContext;
 
@@ -207,7 +207,7 @@ export class Page {
    *
    * @param path - fallback path to go back if no more history exists, if undefined defaults to page.base
    */
-  back(path?: string, state?: unknown) {
+  back(path?: string, state?: State) {
     const page = this;
     if (this.len > 0) {
       // this may need more testing to see if all browsers
@@ -242,7 +242,7 @@ export class Page {
   /**
    * Replace `path` with optional `state` object.
    */
-  replace(path: string, state?: unknown, init?: boolean, dispatch?: boolean) {
+  replace(path: string, state?: State, init?: boolean, dispatch?: boolean) {
     const context = new Context(path, state, this);
     const prev = this.prevContext;
     this.prevContext = context;
@@ -269,7 +269,7 @@ export class Page {
       if (!fn) {
         return nextEnter();
       }
-      fn(prev, nextExit);
+      fn(prev!, nextExit);
     }
 
     const nextEnter = () => {
@@ -306,7 +306,7 @@ export class Page {
       exits.push(pathOrCallback);
     }
 
-    const route = new Route(path, null, this);
+    const route = new Route(path, undefined, this);
     for (const exit of exits) {
       this.exits.push(route.middleware(exit));
     }
@@ -511,7 +511,7 @@ export interface State {
  */
 export class Context {
 
-  init: boolean;
+  init?: boolean;
   handled: boolean;
   page: Page;
   canonicalPath: string;
@@ -523,7 +523,7 @@ export class Context {
   params: any;
   hash: string;
 
-  constructor(path: string, state: State, page: Page = globalPage) {
+  constructor(path: string, state?: State, page: Page = globalPage) {
     this.page = page;
     const window = page._window;
     const hashbang = page._hashbang;
