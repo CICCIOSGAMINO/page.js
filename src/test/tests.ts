@@ -11,7 +11,7 @@ let decodeURLComponents = true;
 let frame: HTMLIFrameElement|undefined;
 const $ = (sel: string) => frame!.contentWindow!.document.querySelector(sel)!;
 
-const fireEvent = (node: Node, eventName: string, path?: Node[]) => {
+const fireEvent = (node: Node, eventName: string) => {
   const MouseEvent = (testWindow() as any).MouseEvent;
   const event = new MouseEvent(eventName, {
     bubbles: true,
@@ -92,11 +92,11 @@ const tests = function() {
     });
 
     it('should invoke the matching async callbacks', function(done) {
-      page.route('/async', function(ctx, next) {
-        setTimeout(function() {
+      page.route('/async', (_ctx, next) => {
+        setTimeout(() => {
           next();
         }, 10);
-      }, function(ctx, next) {
+      }, () => {
         setTimeout(function() {
           done();
         }, 10);
@@ -153,12 +153,12 @@ const tests = function() {
         visited = true;
       });
 
-      page.exit('/async-exit', (ctx, next) => {
-        setTimeout(function() {
+      page.exit('/async-exit', (_ctx, next) => {
+        setTimeout(() => {
           next();
         }, 10);
-      }, (ctx, next) => {
-        setTimeout(function () {
+      }, () => {
+        setTimeout(() => {
           expect(visited).to.equal(true);
           done();
         }, 10);
@@ -431,14 +431,14 @@ const tests = function() {
     });
 
     it('should not invoke the callback', function() {
-      page.route('/whoop', function(ctx) {
+      page.route('/whoop', (_ctx) => {
         expect(true).to.equal(false);
       });
       fireEvent($('.whoop'), 'click');
     });
 
     it('should not fire when navigating to a different domain', function(done){
-      page.route('/diff-domain', function(ctx){
+      page.route('/diff-domain', (_ctx) => {
         expect(true).to.equal(false);
       });
 
@@ -457,14 +457,13 @@ const tests = function() {
         page.show('/');
       });
 
-      fireEvent($('.shadow-path'), 'click', [$('.shadow-path')]);
+      fireEvent($('.shadow-path'), 'click');
     });
   });
 
-
   describe('dispatcher', function() {
     it('should ignore query strings', function(done) {
-      page.route('/qs', function(ctx) {
+      page.route('/qs', (_ctx) => {
         done();
       });
 
@@ -481,7 +480,7 @@ const tests = function() {
     });
 
     it('should invoke the matching callback', function(done) {
-      page.route('/user/:name', function(ctx) {
+      page.route('/user/:name', (_ctx) => {
         done();
       });
 
@@ -534,12 +533,12 @@ const tests = function() {
       it('should invoke subsequent matching middleware', function(done) {
 
         let visistedFirst = false;
-        page.route('/forum/*', function(ctx, next) {
+        page.route('/forum/*', (_ctx, next) => {
           visistedFirst = true;
           next();
         });
 
-        page.route('/forum/:fid/thread/:tid', function(ctx) {
+        page.route('/forum/:fid/thread/:tid', (_ctx) => {
           expect(visistedFirst).to.equal(true);
           done();
         });
