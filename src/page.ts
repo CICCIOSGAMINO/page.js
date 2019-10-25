@@ -97,6 +97,7 @@ export class Page {
       return this._base;
     }
     this._base = path;
+    return undefined;
   }
 
   /**
@@ -121,8 +122,11 @@ export class Page {
    * Get or set strict path matching to `enable`
    */
   strict(enable?: boolean) {
-    if (enable === undefined) return this._strict;
+    if (enable === undefined) {
+      return this._strict;
+    }
     this._strict = enable;
+    return undefined;
   }
 
   /**
