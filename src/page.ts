@@ -55,11 +55,11 @@ export class Page {
   _strict = false; /* Read by Route */
   private _running = false;
   _hashbang = false; /* Read by Context */
-  _window: Window; /* Read by Context */
-  private _popstate: boolean;
-  private _click: boolean;
+  _window!: Window; /* Read by Context */
+  private _popstate!: boolean;
+  private _click!: boolean;
 
-  private prevContext: Context;
+  private prevContext?: Context;
 
   /**
    * Configure the instance of page. This can be called multiple times.
@@ -512,7 +512,7 @@ export interface State {
 export class Context {
 
   init?: boolean;
-  handled: boolean;
+  handled?: boolean;
   page: Page;
   canonicalPath: string;
   path: string;
