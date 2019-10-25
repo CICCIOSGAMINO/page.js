@@ -1,4 +1,4 @@
-import globalPage from '../page.js';
+import globalPage, { StartOptions, Callback, Context } from '../page.js';
 
 let page = globalPage;
 const expect = chai.expect;
@@ -18,26 +18,12 @@ let $: typeof document.querySelector;
   const fireEvent = (node: Node, eventName: string, path?: Node[]) => {
       let event;
 
-      if (typeof (testWindow() as any).Event === 'function') {
-        const MouseEvent = (testWindow() as any).MouseEvent;
-        event = new MouseEvent(eventName, {
-          bubbles: true,
-          button: 1
-        });
-        Object.defineProperty(event, 'which', { value: null });
-      } else {
-        event = testWindow().document.createEvent('MouseEvents');
-
-        // https://developer.mozilla.org/en-US/docs/Web/API/event.initMouseEvent
-        event.initEvent(
-          eventName, true, true, this, 0,
-          event.screenX, event.screenY, event.clientX, event.clientY,
-          false, false, false, false,
-          0, null);
-
-        event.button = 1;
-        event.which = null;
-      }
+      const MouseEvent = (testWindow() as any).MouseEvent;
+      event = new MouseEvent(eventName, {
+        bubbles: true,
+        button: 1
+      });
+      // Object.defineProperty(event, 'which', { value: null });
 
       if (path) {
         Object.defineProperty(event, 'path', {
@@ -50,7 +36,11 @@ let $: typeof document.querySelector;
     testWindow = function(){
       return frame.contentWindow;
     },
-    beforeTests = function(options, done) {
+    beforeTests = function(options: StartOptions & {
+      strict?: boolean;
+      base?: string;
+      decodeURLComponents?: boolean;
+    }, done: () => void) {
       options = options || {};
       page = globalPage.create();
 
@@ -61,8 +51,9 @@ let $: typeof document.querySelector;
 
       function onFrameLoad(){
         if(setbase) {
-          if(options.base)
+          if (options.base) {
             page.base(options.base);
+          }
           const baseTag = frame.contentWindow.document.createElement('base');
           frame.contentWindow.document.head.appendChild(baseTag);
 
@@ -70,8 +61,9 @@ let $: typeof document.querySelector;
         }
 
         options.window = frame.contentWindow;
-        if(options.strict != null)
+        if(options.strict != null) {
           page.strict(options.strict);
+        }
         page.start(options);
         page.show(base ? base + '/' : '/');
         done();
@@ -82,20 +74,20 @@ let $: typeof document.querySelector;
       frame.src = './test-page.html';
       frame.addEventListener('load', onFrameLoad);
     },
-    replaceable = (route) => {
-      function realCallback(ctx) {
+    replaceable = (route: string) => {
+      function realCallback(ctx: Context) {
         obj.callback(ctx);
       }
 
       const obj = {
         callback: Function.prototype,
-        replace: function(cb){
+        replace: function(cb: Callback){
           obj.callback = cb;
         },
-        once: function(cb){
+        once: function(cb: Callback){
           obj.replace(function(ctx){
             obj.callback = Function.prototype;
-            cb(ctx);
+            cb(ctx, undefined);
           });
         }
       };
@@ -204,7 +196,7 @@ let $: typeof document.querySelector;
         });
 
         it('should use the previous context', function(done) {
-          let unique;
+          let unique: {};
 
           page.route('/', function() {});
           page.route('/bootstrap', function(ctx) {
@@ -648,7 +640,7 @@ let $: typeof document.querySelector;
 
     it('Using hashbang, url\'s pathname not included in path', function(done){
       page.stop();
-      baseRoute = function(ctx){
+      baseRoute = function(ctx: Context){
         expect(ctx.path).to.equal('/');
         done();
       };
@@ -683,7 +675,7 @@ let $: typeof document.querySelector;
     before(function(done) {
       decodeURLComponents = false;
       beforeTests({
-        decodeURLComponents: decodeURLComponents
+        decodeURLComponents: decodeURLComponents,
       }, done);
     });
 

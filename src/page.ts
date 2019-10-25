@@ -46,7 +46,7 @@ if (!windowLoaded) {
  */
 export class Page {
   callbacks: Callback[] = [];
-  exits = [];
+  exits: Callback[] = [];
   current = '';
   len = 0;
 
@@ -497,13 +497,9 @@ export class Page {
 
 /**
  * Escapes RegExp characters in the given string.
- *
- * @param {string} s
- * @api private
+ * TODO: import from path-to-regex
  */
-function escapeRegExp(s) {
-  return s.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
-}
+const escapeRegExp = (s: string) => s.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
 
 export interface State {
   path?: string;
@@ -647,13 +643,13 @@ class Route {
    * Check if this route matches `path`, if so
    * populate `params`.
    */
-  private match(path: string, params: {}): boolean {
+  private match(path: string, params: any): boolean {
     const keys = this.keys;
     const qsIndex = path.indexOf('?');
     const pathname = ~qsIndex ? path.slice(0, qsIndex) : path;
     const m = this.regexp.exec(decodeURIComponent(pathname));
 
-    delete params[0]
+    delete params[0];
 
     if (!m) {
       return false;
