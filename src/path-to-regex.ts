@@ -272,14 +272,14 @@ function arrayToRegexp(
   path: Array<string>,
   keys: Array<string | Token>,
   options: Options
-) {
+): RegExp {
   const parts = [];
 
   for (const segment of path) {
     parts.push(pathToRegexp(segment, keys, options).source);
   }
 
-  const regexp: RegExp = new RegExp(
+  const regexp = new RegExp(
     '(?:' + parts.join('|') + ')',
     flags(options)
   );
@@ -315,7 +315,7 @@ function tokensToRegExp(tokens: Array<string | Token>, options: Options = {}) {
   const strict = options.strict;
   const end = options.end !== false;
   const lastToken = tokens[tokens.length - 1];
-  const endsWithSlash = typeof lastToken === 'string' && /\/$/.test(lastToken);
+  const endsWithSlash = typeof lastToken === 'string' && lastToken.endsWith("/");
   let route = '';
 
   // Iterate over the tokens and create our regexp string.

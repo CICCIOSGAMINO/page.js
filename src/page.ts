@@ -112,7 +112,7 @@ export class Page {
    */
   _getBase() {
     let base = this._base;
-    if (!!base) {
+    if (base) {
       return base;
     }
     const loc = this._window && this._window.location;
@@ -398,7 +398,7 @@ export class Page {
     }
 
     // Check for mailto: in the href
-    if (link && link.indexOf('mailto:') > -1) {
+    if (link && link.includes('mailto:')) {
       return;
     }
 
@@ -424,13 +424,13 @@ export class Page {
         (el as HTMLAnchorElement).search +
         ((el as HTMLAnchorElement).hash || '');
 
-    path = path[0] !== '/' ? '/' + path : path;
+    path = !path.startsWith('/') ? '/' + path : path;
 
     // same page
     const orig = path;
     const pageBase = this._getBase();
 
-    if (path.indexOf(pageBase) === 0) {
+    if (path.startsWith(pageBase)) {
       path = path.substr(pageBase.length);
     }
 
@@ -578,7 +578,7 @@ export class Context {
     const hashbang = page._hashbang;
 
     const pageBase = page._getBase();
-    if (path[0] === '/' && path.indexOf(pageBase) !== 0) {
+    if (path.startsWith('/') && !path.startsWith(pageBase)) {
       path = pageBase + (hashbang ? '#!' : '') + path;
     }
     const i = path.indexOf('?');
