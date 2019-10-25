@@ -51,8 +51,7 @@
     "typescript": "^3.7.0-beta"
   },
   "files": [
-    "index.js",
     "page.js",
-    "page.mjs"
+    "path-to-regex.js"
   ]
 }
