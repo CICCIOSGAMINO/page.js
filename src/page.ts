@@ -316,10 +316,6 @@ export class Page {
     }
   }
 
-  create() {
-    return new Page();
-  }
-
   /**
    * Handle "click" events.
    */
