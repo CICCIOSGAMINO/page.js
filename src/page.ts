@@ -319,8 +319,8 @@ export class Page {
   /**
    * Handle "click" events.
    */
-  clickHandler = (e: MouseEvent) => {
-    if (e.defaultPrevented || e.button !== 1 || e.metaKey || e.ctrlKey || e.shiftKey) {
+  clickHandler = (e: MouseEvent | TouchEvent) => {
+    if (e.defaultPrevented || (e as MouseEvent).button !== 1 || e.metaKey || e.ctrlKey || e.shiftKey) {
       return;
     }
 
@@ -418,13 +418,13 @@ export class Page {
   /**
    * Handle "populate" events.
    */
-  private _onpopstate = (e: PopStateEvent) => {
+  private _onpopstate = (e: PopStateEvent | HashChangeEvent) => {
     if (!windowLoaded) {
       return;
     }
-    if (e.state) {
-      const path = e.state.path;
-      this.replace(path, e.state);
+    if ((e as PopStateEvent).state) {
+      const path = (e as PopStateEvent).state.path;
+      this.replace(path, (e as PopStateEvent).state);
     } else {
       const loc = this._window.location;
       this.show(loc.pathname + loc.search + loc.hash, undefined, undefined, false);
