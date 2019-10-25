@@ -90,14 +90,14 @@ export class Page {
   }
 
   /**
-   * Get or set basepath to `path`.
+   * The basepath of the Page instance.
    */
-  base(path?: string) {
-    if (path === undefined) {
-      return this._base;
-    }
+  get base() {
+    return this._base;
+  }
+
+  set base(path: string) {
     this._base = path;
-    return undefined;
   }
 
   /**
@@ -119,14 +119,14 @@ export class Page {
   }
 
   /**
-   * Get or set strict path matching to `enable`
+   * Whether strict path matching is enabled.
    */
-  strict(enable?: boolean) {
-    if (enable === undefined) {
-      return this._strict;
-    }
+  get strict() {
+    return this._strict;
+  }
+
+  set strict(enable: boolean) {
     this._strict = enable;
-    return undefined;
   }
 
   /**

@@ -39,7 +39,7 @@ const beforeTests = function(options: BeforeTestsOptions = {}, done: () => void)
   function onFrameLoad(){
     if(setbase) {
       if (options.base) {
-        page.base(options.base);
+        page.base = options.base;
       }
       const baseTag = testWindow().document.createElement('base');
       testWindow().document.head.appendChild(baseTag);
@@ -49,7 +49,7 @@ const beforeTests = function(options: BeforeTestsOptions = {}, done: () => void)
 
     options.window = testWindow();
     if(options.strict != null) {
-      page.strict(options.strict);
+      page.strict = options.strict;
     }
     page.start(options);
     page.show(base ? base + '/' : '/');
@@ -400,11 +400,11 @@ const tests = function() {
 
     it('should handle trailing slashes in URL', function(done) {
       page.route('/link-trailing', function() {
-        expect(page.strict()).to.equal(false);
+        expect(page.strict).to.equal(false);
         done();
       });
       page.route('/link-trailing/', function() {
-        expect(page.strict()).to.equal(true);
+        expect(page.strict).to.equal(true);
         done();
       });
       fireEvent($('.link-trailing'), 'click');
@@ -412,11 +412,11 @@ const tests = function() {
 
     it('should handle trailing slashes in route', function(done) {
       page.route('/link-no-trailing/', function() {
-        expect(page.strict()).to.equal(false);
+        expect(page.strict).to.equal(false);
         done();
       });
       page.route('/link-no-trailing', function() {
-        expect(page.strict()).to.equal(true);
+        expect(page.strict).to.equal(true);
         done();
       });
       fireEvent($('.link-no-trailing'), 'click');
@@ -489,11 +489,11 @@ const tests = function() {
 
     it('should handle trailing slashes in path', function(done) {
       page.route('/no-trailing', function() {
-        expect(page.strict()).to.equal(false);
+        expect(page.strict).to.equal(false);
         done();
       });
       page.route('/no-trailing/', function() {
-        expect(page.strict()).to.equal(true);
+        expect(page.strict).to.equal(true);
         done();
       });
       page.show('/no-trailing/');
@@ -501,11 +501,11 @@ const tests = function() {
 
     it('should handle trailing slashes in route', function(done) {
       page.route('/trailing/', function() {
-        expect(page.strict()).to.equal(false);
+        expect(page.strict).to.equal(false);
         done();
       });
       page.route('/trailing', function() {
-        expect(page.strict()).to.equal(true);
+        expect(page.strict).to.equal(true);
         done();
       });
       page.show('/trailing');
@@ -561,8 +561,8 @@ const tests = function() {
 const afterTests = function() {
   called = false;
   page.stop();
-  page.base('');
-  page.strict(false);
+  page.base = '';
+  page.strict = false;
   //page.show('/');
   base = '';
   baseRoute = Function.prototype; // noop
