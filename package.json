@@ -25,9 +25,7 @@
     "test-cov": "jscoverage index.js index-cov.js; PAGE_COV=1 mocha test/tests.js -R html-cov > coverage.html",
     "make": "rollup -c rollup.config.js"
   },
-  "dependencies": {
-    "path-to-regexp": "~1.2.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/chai": "^4.2.4",
     "@types/mocha": "^5.2.7",
@@ -38,7 +36,6 @@
     "jade": "^1.7.0",
     "jscoverage": "^0.5.9",
     "jsdom": "^11.5.1",
-    "jshint": "^2.5.10",
     "mocha": "^1.20.1",
     "mocha-lcov-reporter": "0.0.1",
     "prettier": "^1.18.2",
@@ -47,7 +44,6 @@
     "rollup-plugin-filesize": "^6.2.1",
     "rollup-plugin-node-resolve": "^3.0.2",
     "rollup-plugin-terser": "^5.1.2",
-    "should": "*",
     "typescript": "^3.7.0-beta"
   },
   "files": [
